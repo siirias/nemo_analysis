@@ -17,9 +17,11 @@ import cmocean
 import pandas as pd
 import iris
 import iris.plot as iplt
+import iris.quickplot as iqplt
 import siri_omen
 import siri_omen.nemo_reader as nrd
 import cf_units
+import iris.util
 
 ss=smh()
 ss.grid_type='T'
@@ -77,6 +79,7 @@ for name_marker in name_markers:
         else:
             series_name='Scenario_{}_{}'.format(name_marker,var1)
         
+        enddate=datetime.datetime(1982,12,31) #REMOVE!
         filenames=ss.filenames_between(startdate,enddate)
         ok_files=0
         files_working=[]
@@ -99,46 +102,38 @@ for name_marker in name_markers:
         time_axis=None    
         is_first=True
         yearly_variable_data={}
-        for f in files_working:
+        iris_list=iris.cube.CubeList([])
+        for num,f in enumerate(files_working):
             data=iris.load(ss.main_data_folder+f,var1)[0]
             data=nrd.remove_null_indices(data)
             nrd.fix_cube_coordinates(data)
-            d=data.collapsed(['longitude','latitude'],iris.analysis.MEAN)            
-
-            #dshape should be time,depth,lats,lon[0]s
-            if(just_one):
-                times=[times[0]]
-            for time_frame in range(len(times)):
-                time=ss.nemo_time_to_datetime(times[time_frame])
-                if(np.sum(~d[time_frame,:,:].mask)>0): #which means there is some actual number here
-                    variable_times_volume=np.sum(d[time_frame,:,:,:]*volumes,axis=(1,2)) #sum over lat,lon
-                    mean_variable=variable_times_volume/np.sum(~d[time_frame,:,:,:].mask*volumes,axis=(1,2))
-                    if time.year in yearly_variable_data.keys():
-                        yearly_variable_data[time.year]['samples']+=1
-                        yearly_variable_data[time.year]['mean']+=mean_variable
-                    else:
-                        yearly_variable_data[time.year]={'year':time.year,
-                                                                  'mean':mean_variable,
-                                                                  'samples':1}
-                        
-                    day_year=time.timetuple().tm_yday
-                    month_year=time.month-1
-                    if is_first:
-                        mean_variables=np.array([variable_times_volume])
-                        time_axis=np.array([time])
-                        is_first=False
-                    else:
-                        mean_variables=np.concatenate((mean_variables,[variable_times_volume]))
-                        time_axis=np.concatenate((time_axis,[time]))
-                running_number+=1
-                print("Analysing {} ({} of approx {})".format(time,running_number,int(len(files_working)*30.5)))
+            area_weights=iris.analysis.cartography.area_weights(data)
+            #TODO: add computation of the depth too.
+            cell_thickness=data.coord('depth').bounds[:,1]-data.coord('depth').bounds[:,0]
+            depth_coord=data.coord_dims('depth')[0] #tells which axis is depth
+            new_shape=np.array(area_weights.shape)#new shape has same dimensions than area.
+            new_shape[:]=1 #dimensions stay same, but each has just one entry.
+            new_shape[depth_coord]=area_weights.shape[depth_coord] #depth axis is real lenght 
+            area_weights=area_weights*cell_thickness.reshape(new_shape) #multiply along depth axis
+            #After this, the area_weights should actually be volume weights.
+            
+#TODO: figure out the actual formula for heat content
+            d=data.collapsed(['longitude','latitude'],iris.analysis.SUM,weights=area_weights)
+            iris_list.append(d)
+            print("Analysing {} ({} of {})".format(f,num+1,len(files_working)))
+        iris_data=siri_omen.concatenate_cubes(iris_list)
+        iris_data.attributes['name']="{}-{}-{}-{}".format(name_marker,var1,startdate,enddate)
+        out_file_name=datadir+'reserve_{}_{}.nc'.format(var1,name_marker)
+        iris.save(iris_data,out_file_name)
+        print("{}:Cube saved succesfully",out_file_name)
+        print(iris_data)
         #iris system
         #first define time axis:
-        iris_time_unit=cf_units.Unit(time_units,calendar=time_calendar)
-        iris_time_coord=iris.coords.DimCoord(iris_time_unit.date2num(time_axis),standard_name='time',units=iris_time_unit)
-        iris_depth_coord=iris.coords.DimCoord(depths,standard_name='depth',units='m')
-
-        cube_J=iris.cube.Cube(mean_variables,long_name='thermal_energy',units='J')
-        cube_J.add_dim_coord(iris_time_coord,0)
-        cube_J.add_dim_coord(iris_depth_coord,1)
-        iris.save(cube_J,datadir+'reserve_{}_{}.nc'.format(var1,name_marker))        
+#        iris_time_unit=cf_units.Unit(time_units,calendar=time_calendar)
+#        iris_time_coord=iris.coords.DimCoord(iris_time_unit.date2num(time_axis),standard_name='time',units=iris_time_unit)
+#        iris_depth_coord=iris.coords.DimCoord(depths,standard_name='depth',units='m')
+#
+#        cube_J=iris.cube.Cube(mean_variables,long_name='thermal_energy',units='J')
+#        cube_J.add_dim_coord(iris_time_coord,0)
+#        cube_J.add_dim_coord(iris_depth_coord,1)
+#        iris.save(cube_J,datadir+'reserve_{}_{}.nc'.format(var1,name_marker))        
