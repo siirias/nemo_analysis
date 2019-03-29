@@ -22,6 +22,7 @@ import siri_omen
 import siri_omen.nemo_reader as nrd
 import cf_units
 import iris.util
+import gsw  # TEOS-10
 
 ss = smh()
 ss.grid_type = 'T'
@@ -30,17 +31,8 @@ ss.file_name_format = 'NORDIC-GoB_1{}_{}_{}_grid_{}.nc'
 ss.root_data_in = "/lustre/tmp/siirias/o/tmp/"  # gludge as the main disk is not sure enough.
 # folder_start = 'OUTPUT'
 name_markers = ['new_REANALYSIS']
-# name_markers = ['REANALYSIS', 'A001', 'D001', 'C001']
-# name_markers = ['A001', 'B001', 'C001']
-# variables = ['SSS', 'SST', 'SSH_inst']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
-# variables= ['vosaline', 'potential_temperature']
-make_climatology = True
-# name_marker = 'A001'  # this one tells which dataseries is handled.
-climatology_time_slots = 366
-if(ss.interval =='m'):
-    climatology_time_slots = 12
     
 for name_marker in name_markers:
     folder_start = 'OUTPUT'
@@ -62,13 +54,9 @@ for name_marker in name_markers:
     
     ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start, name_marker)
     depth_ax = 'deptht'
-    if variable_temperature in ['SST', 'SSS', 'SSH_inst']:
-        ss.grid_type = 'T'
-        ss.interval = 'd'
-    if variable_temperature in ['vosaline', 'potential_temperature']:
-        ss.grid_type = 'T'
-        ss.interval = 'm'
-        depth_ax = 'deptht'
+    ss.grid_type = 'T'
+    ss.interval = 'm'
+    depth_ax = 'deptht'
     
     
     if '1' in name_marker: # the 001 series are hindcasts, all other scenarios
@@ -125,8 +113,11 @@ for name_marker in name_markers:
         # "Conservative Temperature accurately represents the Heat Content
         # per unit of mass of seawater"
         # as such equation should be: Volume*Density*CT
-        p_temperature.data=gsw.CT_from_pt(salinity.data,p_temperature.data)
-        #convert to Conservative Temperature
+        p_temperature.data = gsw.CT_from_pt(salinity.data,p_temperature.data)
+        # convert to Conservative Temperature
+        density = siri_omen.utility.cube_density(salinity, p_temperature)
+        # Now we should have all that is needed, let's combine:
+        p_temperature.data = volumes*density*p_temperature.data
         d = p_temperature.collapsed(['longitude', 'latitude'], iris.analysis.SUM, weights = volumes)
         iris_list.append(d)
         print("Analysing {} ({} of {})".format(f, num+1, len(files_working)))
