@@ -37,8 +37,9 @@ name_markers = ['new_REANALYSIS','REANALYSIS_SMHI','REANALYSIS']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
-collapse_style={'name':'depthlat','coords':['longitude']}    
-#collapse_style={'name':'total','coords':[]}    
+#collapse_style={'name':'depthlat','coords':['longitude']}    
+#collapse_style={'name':'depthlatlon','coords':[]}    
+collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
 for name_marker in name_markers:
     folder_start = 'OUTPUT'
     ss.save_interval = 'year'
@@ -101,27 +102,38 @@ for name_marker in name_markers:
     yearly_variable_data = {}
     iris_list = iris.cube.CubeList([])
     for num, f in enumerate(files_working):
+        temperature = None
+        salinity = None
         with warnings.catch_warnings():
             # this to not show warnings of wrong units
             warnings.simplefilter("ignore")  
-            temperature = iris.load(ss.main_data_folder+f, variable_temperature)[0]
-        temperature = nrd.remove_null_indices(temperature,fill_value=0.0)
-        nrd.fix_cube_coordinates(temperature)
+            variables = iris.load(ss.main_data_folder+f,\
+                         [variable_temperature, variable_salinity])
+            for v in variables:
+                if v.name() == variable_temperature:
+                    temperature = v
+                if v.name() == variable_salinity:
+                    salinity = v
+            temperature = nrd.remove_null_indices(temperature,fill_value=0.0)
+            nrd.fix_cube_coordinates(temperature)
 
-        with warnings.catch_warnings():
-            # this to not show warnings of wrong units
-            warnings.simplefilter("ignore")  
-            salinity = iris.load(ss.main_data_folder+f, variable_salinity)[0]
-        salinity = nrd.remove_null_indices(salinity,fill_value=0.0)
-        nrd.fix_cube_coordinates(salinity)
-        salinity = sou.abs_sal_from_pract_sal(salinity) 
-        # Now we should have salinity and temperature set.
+            salinity = nrd.remove_null_indices(salinity,fill_value=0.0)
+            nrd.fix_cube_coordinates(salinity)
+            salinity = sou.abs_sal_from_pract_sal(salinity) 
+            # Now we should have salinity and temperature set.
 
-        heat_content = sou.cube_heat_content(salinity, temperature)
-        d = heat_content.collapsed(collapse_style['coords'],
-                                    iris.analysis.SUM)
-        print (d.shape)
-        print("MAX heat Content:{}".format(np.max(d.collapsed('depth',iris.analysis.SUM).data)))
+            heat_content = sou.cube_heat_content(salinity, temperature)
+            d = heat_content.collapsed(collapse_style['coords'],
+                                        iris.analysis.SUM)
+        all_coords=[]
+        for coord in d.coords():
+            if coord.name() is not 'time' and coord.shape[0]>1:
+                all_coords.append(coord.name())
+        if len(all_coords)>0:
+            max_heat_content = np.max(d.collapsed(all_coords,iris.analysis.SUM).data)
+        else:
+            max_heat_content = np.max(d.data)
+        print("MAX heat Content:{}".format(max_heat_content))
         iris_list.append(d)
         print("Analysing {} ({} of {})".format(f, num+1, len(files_working)))
     iris_heat_content = siri_omen.concatenate_cubes(iris_list)
