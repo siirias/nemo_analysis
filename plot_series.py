@@ -21,9 +21,10 @@ import re
 
 
 name_marker='A002'  #this one tells which dataseries is handled.
-other_name_marker='B001'  #this one tells which dataseries is handled.
-compare_two=False
-
+other_name_marker='C002'  #this one tells which dataseries is handled.
+compare_two=True
+just_one=False
+save_quality = 60  # None, or 0...100. 0=worst
 if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
     startdate=datetime.datetime(1975,1,1)
     enddate=datetime.datetime(2005,12,31)
@@ -33,13 +34,16 @@ else:
 ss=smh()
 ss.grid_type='T'
 ss.interval='d'
-ss.main_data_folder= ss.root_data_in+"/OUTPUT{}/".format(name_marker)
-datadir = ss.root_data_out+"/tmp/Images_for_video2/" #where everyt output is stored
+ss.save_interval = 'year'
+ss.main_data_folder= ss.root_data_in+"/{}/".format(name_marker)
+datadir = ss.root_data_out+"/tmp/Images_for_video/" #where everyt output is stored
+name_start={'A':"NORDIC", 'B':'NORDIC', 'C':'SS', 'D':'SS'}
+ss.file_name_format="-GOB_1{}_{}_{}_grid_{}.nc"  
 
 image_per_month={'h':24*30.5,'d':30.5,'m':1}
 
 
-var1 = 'SST'  #'VEL', 'SST', 'SSS'
+var1 = 'SST'  #'VEL', 'SST', 'SSS', 'SBS', 'SBT'
 combined_name_markers=name_marker
 if(compare_two):
     combined_name_markers="{}-{}".format(name_marker,other_name_marker)
@@ -47,12 +51,18 @@ if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
     series_name='Hindcast_{}_{}'.format(combined_name_markers,var1)
 else:
     series_name='Scenario_{}_{}'.format(combined_name_markers,var1)
-
+if (compare_two):
+    datadir = datadir+'{}{}{}/'.format(var1,name_marker,other_name_marker)
+else:
+    datadir = datadir+'{}{}/'.format(var1,name_marker)
+if(not os.path.exists(datadir)):
+    os.mkdir(datadir)
 
 #Let's try to plot soemthing to start with:
 lon_min=16;lat_min=60;lon_max=26.01;lat_max=66.01;
 running_number=0
 show_contours=True
+contour_step = 0.4
 plotted_depth=0. #meters
 
 var2 = None  #None, 'icecon'
@@ -60,7 +70,7 @@ var2_min=0.0
 var2_max=1.5
 var2_cm='gray'
 
-
+"""
 #gludge lines to get the hindcastfiles in    
 #ss.main_data_folder= ss.root_data_in+"/tmp/ice_test/everysecond_dt/"
 ss.main_data_folder= ss.root_data_in+"/experimental_run/mixing_test_normal_radiation/"
@@ -72,7 +82,7 @@ ss.save_interval='year'
 var1 = 'SSS'  #'VEL', 'SST', 'SSS'
 var2= None #'icevolume'  #'icecon','icethic', 'icevolume'
 #gludge lines end.
-
+"""
 
 if var1 in ['VEL']:
     var_min=0.0
@@ -93,10 +103,10 @@ if var1 in ['SST']:
     if(compare_two):
         var_min=-5.0
         var_max=5.0
-if var1 in ['SSS']:
+if var1 in ['SSS', 'SBS']:
     var_min=-0.0
     var_max=7.0
-    var1_cm=cmocean.cm.haline
+    var1_cm='prism' #  cmocean.cm.haline
     ss.grid_type='T'  #U,V,T
     ss.interval='d'
     if(compare_two):
@@ -114,9 +124,8 @@ if var1 in ['SSH']:
 font_size=10.0
 resolution='f'
 projection='laea'
-just_one=True
 
-
+ss.file_name_format=name_start[name_marker[0]]+"-GOB_1{}_{}_{}_grid_{}.nc" 
 filenames=ss.filenames_between(startdate,enddate)
 ok_files=0
 files_working=[]
@@ -130,7 +139,8 @@ print()
 print("ok {} out of {}".format(ok_files,len(filenames)))
 if compare_two:
     real_main_data_folder=ss.main_data_folder
-    ss.main_data_folder= ss.root_data_in+"/OUTPUT{}/".format(other_name_marker)
+    ss.main_data_folder= ss.root_data_in+"/{}/".format(other_name_marker)
+    ss.file_name_format=name_start[other_name_marker[0]]+"-GOB_1{}_{}_{}_grid_{}.nc" 
     filenames=ss.filenames_between(startdate,enddate)
     ok_files=0
     other_files_working=[]
@@ -188,7 +198,7 @@ for f, other_f in zip(files_working,other_files_working):
     if(compare_two):
         other_data=Dataset(other_main_data_folder+other_f)
         
-    if(var1 in ['SST','SSH','SSS']):
+    if(var1 in ['SST', 'SSH', 'SSS', 'SBS', 'SBT']):
         d=data.variables[var1][:]
         d=np.ma.masked_where(d==0.0,d)
     if(var1 in ['VEL']):
@@ -223,14 +233,16 @@ for f, other_f in zip(files_working,other_files_working):
         time=ss.nemo_time_to_datetime(times[time_frame])
         tmp_lon,tmp_lat=bmap(lons,lats)
 #        cb=plt.colorbar(fraction=0.027, pad=0.01)
-        colors_fig=bmap.pcolormesh(tmp_lon,tmp_lat,d[time_frame,:,:],vmin=var_min,vmax=var_max,zorder=-3,cmap=var1_cm)
+        colors_fig=bmap.pcolormesh(tmp_lon,tmp_lat,d[time_frame,:,:],\
+                            vmin=var_min,vmax=var_max,zorder=-3,cmap=var1_cm)
 #        if is_first:
 #            cb=plt.colorbar()
 #            cb.set_clim(vmin=var_min,vmax=var_max)
 #            cb.ax.tick_params(labelsize=font_size)
 #            is_first=False
         if(var2 is not None):
-            ice_fig=bmap.pcolormesh(tmp_lon,tmp_lat,ice_d[time_frame,:,:],vmin=var2_min,vmax=var2_max,zorder=16,cmap=var2_cm)
+            ice_fig=bmap.pcolormesh(tmp_lon,tmp_lat,ice_d[time_frame,:,:],\
+                            vmin=var2_min,vmax=var2_max,zorder=16,cmap=var2_cm)
             if is_first:
                 cb=plt.colorbar()
                 cb.set_clim(vmin=var2_min,vmax=var2_max)
@@ -244,10 +256,14 @@ for f, other_f in zip(files_working,other_files_working):
                 is_first=False
 
         if show_contours:
-            cont_fig=bmap.contour(tmp_lon,tmp_lat,d[time_frame,:,:],vmin=var_min,vmax=var_max,zorder=15,colors='black',linewidths=0.5,alpha=0.5)
+            cont_fig=bmap.contour(tmp_lon,tmp_lat,d[time_frame,:,:],\
+                                    vmin=var_min,vmax=var_max,zorder=15,\
+                                    levels = np.arange(var_min, var_max, contour_step),\
+                                    colors='black',linewidths=0.5,alpha=0.5)
             cont_labels=plt.clabel(cont_fig,inline=1,fontsize=5,fmt="%1.1f")
         annotation=plt.annotate(time.strftime("%Y-%m-%d"),xy=(0.25, 0.95), xycoords='axes fraction',zorder=100)
-        plt.savefig("{}{}{:05d}.png".format(datadir,series_name,running_number),facecolor='w',dpi=300)
+        plt.savefig("{}{}{:05d}.jpg".format(datadir,series_name,running_number),\
+            facecolor='w',dpi=300, quality = save_quality)
         if(not just_one):
             #clean up the changing things, so we don't have to do everything again, just these:
             colors_fig.remove()

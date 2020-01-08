@@ -11,60 +11,73 @@ import matplotlib as mp
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
-from mpl_toolkits.basemap import Basemap
-from mpl_toolkits.basemap import Basemap, shiftgrid, cm
 import netCDF4 as nc4
 from netCDF4 import Dataset
 from smartseahelper import smh
 import os
 import cmocean
 import pandas as pd
-import xarray as xr
 
 ss=smh()
 ss.grid_type='T'
-ss.interval='m'
-ss.save_interval='month'
+ss.interval='d'
+ss.save_interval='year'
+ss.file_name_format="NORDIC-GoB_1{}_{}_{}_grid_{}.nc"  
+just_bottom = False  # used to get bottom values from 3d grid
 #folder_start='OUTPUT'
 #name_markers=['A001','A002']
 folder_start=''
 #name_markers=['REANALYSIS','A001','B001','C001']
-name_markers=['A001','B001','C001']
+#name_markers=['A001','B001','C001', 'D001']
+#name_markers=['A005','A002','A001','B005','B002','B001','C001','C002','D001','D002','D005']
+name_markers=['B001','B005','B002','D001','D005','D002']
 #variables = ['SSS', 'SST', 'SSH_inst']
-variables= ['vosaline','votemper']
-make_climatology = True
+#variables= ['icecon','icevolume','SSS','SST','SBS','vosaline','votemper']
+variables= ['SSS','SST','SBS','vosaline','votemper']
+#variables= ['vosaline', 'votemper']
+#variables= ['SBS','SSS']
+make_climatology = True 
+extra_definition = 'c20v_'
+#extra_definition = ''
 #name_marker='A001'  #this one tells which dataseries is handled.
 climatology_time_slots=366
 if(ss.interval=='m'):
     climatology_time_slots=12
     
 for name_marker in name_markers:
+    if 'A' in name_marker or 'B' in name_marker:
+        ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
+    else:
+
+        ss.file_name_format="SS-GOB_1{}_{}_{}_grid_{}.nc"  
     for var1 in variables:
-        
+        var1_actual = var1  # some variables load actually a different name        
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
             startdate=datetime.datetime(1975,1,1)
             enddate=datetime.datetime(2005,12,31)
-            folder_start="OUTPUT"
         elif 'REANALYSIS' in name_marker:
             startdate=datetime.datetime(1980,1,1)
             enddate=datetime.datetime(2012,12,31)
             ss.save_interval='year'
-            folder_start=""
         else:
-            startdate=datetime.datetime(2006,1,1)
+            startdate=datetime.datetime(2048,1,1)  # should be 2006  #2028 for earlier
             enddate=datetime.datetime(2058,12,31)
-            folder_start="OUTPUT"
         datadir = ss.root_data_out+"/derived_data/test/" #where everyt output is stored
         
         ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start,name_marker)
         depth_ax='deptht'
-        if var1 in ['SST','SSS','SSH_inst']:
+        if var1 in ['SST','SSS','SSH_inst','SBT','icecon','icevolume']:
             ss.grid_type='T'
             ss.interval='d'
-        if var1 in ['vosaline','votemper']:
+            climatology_time_slots=366
+        if var1 in ['vosaline','votemper','SBT']:
             ss.grid_type='T'
             ss.interval='m'
+            climatology_time_slots=12
             depth_ax='deptht'
+            if var1 in ['SBT']:
+                just_bottom = True
+                var1_actual = 'votemper'
         
         
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
@@ -74,6 +87,7 @@ for name_marker in name_markers:
         else:
             series_name='Scenario_{}_{}'.format(name_marker,var1)
         
+        print("Analysing files from {}".format(ss.main_data_folder))
         filenames=ss.filenames_between(startdate,enddate)
         ok_files=0
         files_working=[]
@@ -96,14 +110,17 @@ for name_marker in name_markers:
         is_first=True
         yearly_variable_data={}
         if(make_climatology):
-            climatology_data=nc4.Dataset(datadir+'climatology_{}_{}_{}.nc'.format(name_marker,ss.interval,var1),'w',format='NETCDF4')
+            climatology_data=nc4.Dataset(datadir+'{}climatology_{}_{}_{}.nc'.format(\
+                    extra_definition,name_marker,ss.interval,var1),'w',format='NETCDF4')
             clim_lat=None
             clim_lon=None
             clim_day=None
             clim_variable=None
         for f in files_working:
             data=Dataset(ss.main_data_folder+f)
-            d=data.variables[var1][:]
+            d=data.variables[var1_actual][:]
+            if(just_bottom): # this is 3d value, where bottom is wanted
+                d = ss.give_bottom_values(d)
             d=np.ma.masked_where(d==0.0,d)
             lons = data.variables['nav_lon'][:]
             lats = data.variables['nav_lat'][:]
@@ -174,16 +191,22 @@ for name_marker in name_markers:
                             clim_lat[:]=lats
                             clim_lon[:]=lons
                             clim_variable_mean[:]=0.0
-                            if(data_3d):
+                            if(ss.interval=='m' and data_3d):
                                 clim_variable_mean[month_year,:,:,:]+=d[time_frame,:,:,:] #-1 to start from day 0
                                 clim_samples[month_year]+=1
-                            else:
+                            if(ss.interval=='m' and not data_3d):
+                                clim_variable_mean[month_year,:,:]+=d[time_frame,:,:] #-1 to start from day 0
+                                clim_samples[month_year]+=1
+                            if(ss.interval=='d' and not data_3d):
                                 clim_variable_mean[day_year-1,:,:]+=d[time_frame,:,:] #-1 to start from day 0
+                                clim_samples[day_year-1]+=1
+                            if(ss.interval=='d' and data_3d):
+                                clim_variable_mean[day_year-1,:,:,:]+=d[time_frame,:,:,:] #-1 to start from day 0
                                 clim_samples[day_year-1]+=1
                             clim_lon.units = 'degrees east'
                             clim_lat.units = 'degrees north'
                             clim_day.units = 'day of year'
-                            clim_variable_mean.units = data.variables[var1].units
+                            clim_variable_mean.units = data.variables[var1_actual].units
                             clim_variable_mean.coordinates = "time_centered nav_lon nav_lat"                
                         
                         mean_variables=np.array([mean_variable])
@@ -193,11 +216,17 @@ for name_marker in name_markers:
                         mean_variables=np.concatenate((mean_variables,[mean_variable]))
                         time_axis=np.concatenate((time_axis,[time]))
                         if(make_climatology):
-                            if(data_3d):
-                                clim_variable_mean[month_year-1,:,:,:]+=d[time_frame,:,:,:] #-1 to start from day 0
-                                clim_samples[month_year-1]+=1
-                            else:
+                            if(ss.interval=='m' and data_3d):
+                                clim_variable_mean[month_year,:,:,:]+=d[time_frame,:,:,:] #-1 to start from day 0
+                                clim_samples[month_year]+=1
+                            if(ss.interval=='m' and not data_3d):
+                                clim_variable_mean[month_year,:,:]+=d[time_frame,:,:] #-1 to start from day 0
+                                clim_samples[month_year]+=1
+                            if(ss.interval=='d' and not data_3d):
                                 clim_variable_mean[day_year-1,:,:]+=d[time_frame,:,:] #-1 to start from day 0
+                                clim_samples[day_year-1]+=1
+                            if(ss.interval=='d' and data_3d):
+                                clim_variable_mean[day_year-1,:,:,:]+=d[time_frame,:,:,:] #-1 to start from day 0
                                 clim_samples[day_year-1]+=1
 #                                clim_variable_mean[day_year-1,:,:]+=d[time_frame,:,:] #-1 to start from day 0
 #                                clim_samples[day_year-1]+=1
@@ -209,10 +238,11 @@ for name_marker in name_markers:
         #fix the averages:
         for i in yearly_variable_data:
             yearly_variable_data[i]['mean']/=float(yearly_variable_data[i]['samples'])
-        for i in range(climatology_time_slots):
-            if(clim_samples[i]>1):
-                clim_variable_mean[i,:,:]=clim_variable_mean[i,:,:]/float(clim_samples[i])
-        climatology_data.close()
+        if( make_climatology):
+            for i in range(climatology_time_slots):
+                if(clim_samples[i]>1):
+                    clim_variable_mean[i,:,:]=clim_variable_mean[i,:,:]/float(clim_samples[i])
+            climatology_data.close()
         
         full_data=pd.DataFrame({'time':time_axis,'mean_{}'.format(var1):mean_variables})
         full_data.to_csv(datadir+'mean_{}_{}.csv'.format(var1,name_marker),index=False)

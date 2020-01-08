@@ -113,7 +113,7 @@ class smh:
         #gives the indices corresponding to given latitude and longitude, on the given lat/lon grid
         return (np.abs(lats[:,0]-lat).argmin(), np.abs(lons[0,:]-lon).argmin())
         
-    def give_bottom_values(array4d):
+    def give_bottom_values(self, array4d):
         bottom_index=(array4d[0,:,:,:]!=0.0).sum(axis=0)-1 #first axis time, then depth, x,y
         bottom_index[bottom_index<0]=0
         values=array4d[:,0,:,:].copy()
@@ -122,6 +122,24 @@ class smh:
                 if ~bottom_index.mask[i,j]:
                     values[:,i,j]=array4d[:,bottom_index[i,j],i,j]
         return values
+    def get_bottom(self, grid):
+        # grid is supposed to be masked array, Time, D,Lat,Lon
+        # The idea in this is to shifht the mask one layer up,
+        # and find the values which are masked in one (and only one) of
+        # these masks. 
+        full_shape = grid.shape
+        bottom_layers = np.zeros((  full_shape[0],\
+                                    full_shape[2],
+                                    full_shape[3]))
+        bottom_layers = np.ma.masked_array(bottom_layers,False)
+        mask_roll = np.roll(grid.mask,-1,1) # move mask values one up.
+        mask_roll[:,-1,:,:] = True  # And mark bottom most mask as True.
+                                   # This to get bottom values if there are no mask at end
+        grid.mask = ~(grid.mask ^ mask_roll)
+        bottom_layers = np.sum(grid,1)
+        values = np.array(np.sum(~grid.mask,1),bool)  # used to get the mask
+        bottom_layers.mask = ~values
+        return bottom_layers
             
         
         
