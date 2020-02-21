@@ -23,7 +23,7 @@ import siri_omen.utility as sou
 import siri_omen.nemo_reader as nrd
 import cf_units
 import iris.util
-import gsw  # TEOS-10
+#import gsw  # TEOS-10
 import warnings
 
 ss = smh()
