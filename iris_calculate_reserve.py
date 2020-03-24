@@ -25,6 +25,9 @@ import cf_units
 import iris.util
 #import gsw  # TEOS-10
 import warnings
+import multiprocessing as mpr
+import time
+import random 
 
 ss = smh()
 ss.grid_type = 'T'
@@ -44,9 +47,15 @@ variable_salinity = 'salinity'
 #collapse_style={'name':'depthlat','coords':['longitude']}    
 #collapse_style={'name':'depthlatlon','coords':[]}    
 collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
-for name_marker in name_markers:
+def calculate_reserve(name_marker, ss, collapse_style): 
+	# Calculates salinity, temperature reserves.
+	# name_marker: set name, e.g. A002
+	# ss is the smartseahelper function
+	# collapse_style, tells which axis to collapse
+
     folder_start = ''
     ss.save_interval = 'year'
+    ss.file_name_format = 'NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
     if 'D' in name_marker or 'C' in name_marker:
         ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
     if '1' in name_marker: # the 001 series are hindcasts, all other scenarios
@@ -159,3 +168,12 @@ for name_marker in name_markers:
     iris.save(iris_salt_content, out_file_name)
     print("{}:Cube saved succesfully", out_file_name)
     print(iris_salt_content)
+
+if( __name__ == "__main__"): #just check we are not in any subprocess
+    processes = []
+    for name_marker in name_markers:
+        p = mpr.Process(target = calculate_reserve, args = (name_marker, ss, collapse_style))
+        processes.append(p)
+        p.start()
+    for p in processes:
+        p.join()
