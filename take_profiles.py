@@ -13,8 +13,8 @@ Created on Tue Jul  3 14:11:45 2018
 """
 
 import datetime
-import matplotlib as mp
-import matplotlib.pyplot as plt
+#import matplotlib as mp
+#import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
 import netCDF4 as nc4
@@ -23,21 +23,30 @@ from smartseahelper import smh
 import os
 
 ss=smh()
-
-name_markers=['A001']
-variables=['votemper','vosaline','SSH_inst','SST','SSS']
+ss.root_data_out =  '/scratch/project_2001635/siiriasi/smartsea_data/'
+ss.root_data_in =  '/scratch/project_2001635/siiriasi/smartsea_data/'
+ss.save_interval = 'year'
+ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
+name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
+#name_markers=['D002']
+#variables=['votemper','vosaline','SSH_inst','SST','SSS']
+variables=['vosaline','votemper']
 dataset_to_substract = ''    
 #profiles=[{'name':'koe','lat':65.0,'lon':23.0},
 #          {'name':'SR5','lat':61.0520,'lon':19.3555}
 #          ]
 profiles=open("monitoring_points.txt",'r').readlines()
-profiles=map(lambda x:{'name':x.split('\t')[0],'lat':float(x.split('\t')[1]),'lon':float(x.split('\t')[2])},profiles)
-
+profiles=map(lambda x:{'name':x.strip().split('\t')[0],\
+                        'lat':float(x.strip().split('\t')[1]),\
+                        'lon':float(x.strip().split('\t')[2])},profiles)
+profiles = list(profiles) # want list, not map object (python 3.0)
 for name_marker in name_markers:
+    if('D' in name_marker or 'C' in name_marker):
+        ss.file_name_format="SS-GOB_1{}_{}_{}_grid_{}.nc"  
     for var1 in variables:
-        datadir = ss.root_data_out+"/derived_data/" #where everyt output is stored
+        datadir = ss.root_data_out+"/derived_data/extracted_profiles/" #where everyt output is stored
         
-        ss.main_data_folder= ss.root_data_in+"/OUTPUT{}/".format(name_marker)
+        ss.main_data_folder= ss.root_data_in+"/{}/".format(name_marker)
 
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
             startdate=datetime.datetime(1975,1,1)
@@ -90,6 +99,7 @@ for name_marker in name_markers:
         prof_day=None
         prof_variable=None
         for f in files_working:
+            print(f"variable: {var1}")
             data=Dataset(ss.main_data_folder+f)
             d=data.variables[var1][:]
             d=np.ma.masked_where(d==0.0,d)
@@ -119,9 +129,10 @@ for name_marker in name_markers:
                     else:
                         actual_data=d[time_frame,prof_lat_index,prof_lon_index]
                     if is_first:
+                        print("Create axis")
                         profile_data[profile['name']].createDimension(depth_ax,number_of_depth_points)
                         profile_data[profile['name']].createDimension('time',None)
-                        prof_day=profile_data[profile['name']].createVariable('date','i4','time')
+                        prof_day=profile_data[profile['name']].createVariable('date','u4','time')
                         prof_depth=profile_data[profile['name']].createVariable(depth_ax,'f4',depth_ax)
                         prof_variable=profile_data[profile['name']].createVariable(variable_name,'f4',('time',depth_ax))
                         file_latitude=profile_data[profile['name']].createVariable('latitude','f4')
