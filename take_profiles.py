@@ -27,7 +27,8 @@ ss.root_data_out =  '/scratch/project_2001635/siiriasi/smartsea_data/'
 ss.root_data_in =  '/scratch/project_2001635/siiriasi/smartsea_data/'
 ss.save_interval = 'year'
 ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
-name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
+#name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
+name_markers=['A001','B001','D001','A002','A005','B002','B005']
 #name_markers=['D002']
 #variables=['votemper','vosaline','SSH_inst','SST','SSS']
 variables=['vosaline','votemper']
@@ -41,6 +42,7 @@ profiles=map(lambda x:{'name':x.strip().split('\t')[0],\
                         'lon':float(x.strip().split('\t')[2])},profiles)
 profiles = list(profiles) # want list, not map object (python 3.0)
 for name_marker in name_markers:
+    ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
     if('D' in name_marker or 'C' in name_marker):
         ss.file_name_format="SS-GOB_1{}_{}_{}_grid_{}.nc"  
     for var1 in variables:
@@ -80,7 +82,8 @@ for name_marker in name_markers:
                 print(f)
         print()
         print("ok {} out of {}".format(ok_files,len(filenames)))
-            
+        if(ok_files == 0):
+            raise Exception('No files found')    
         
         
         
