@@ -49,7 +49,18 @@ def set_style(set_name,alpha=1.0):
             'linestyle':scen_styles[scenario],
             'linewidth':line_width,
             'alpha':alpha}
-    
+
+class ValueSet():
+    def __init__(self):
+        self.data = {}
+    def add(self, point,depth,set_name,value):
+        if(not point in self.data.keys()):
+            self.data[point] = {}
+        if(not depth in self.data[point].keys()):
+            self.data[point][depth] = {}
+        if(not set_name in self.data[point][depth].keys()):
+            self.data[point][depth][set_name] = value
+        return True
     
         
 if analyze_salt_content:
@@ -92,7 +103,7 @@ if analyze_salt_content:
     plt.legend()
     plt.savefig(out_dir+"total_salt_{}-{}.png".format(\
                 period['min'].year,period['max'].year))
-    
+gathered_profile_trends = ValueSet()
 if analyze_salt_profiles:
     variable = 'vosaline'
     all_depths = [0.0,50.0,2000.0] #depth, if under the bottom, the lowest with number is accepted.
@@ -141,6 +152,11 @@ if analyze_salt_profiles:
                 label_text = "{}:{:0.3f} u/dec".format(s,fitting[0]*3651.5)
                 plt.plot(d['time'],smoothed,label=label_text, \
                              zorder=15,**set_style(s))
+                gathered_profile_trends.add(\
+                        point,\
+                        "{:0.1f}".format(depth),\
+                        s,\
+                        fitting[0]*365.15)
                 if(plot_trends):
                     plt.plot(mp.dates.num2date(fitting_time),\
                              fitting[0]*fitting_time+fitting[1],\
