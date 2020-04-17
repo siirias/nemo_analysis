@@ -28,8 +28,8 @@ ss.root_data_in =  '/scratch/project_2001635/siiriasi/smartsea_data/'
 ss.save_interval = 'year'
 ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
 #name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
-name_markers=['A001','B001','D001','A002','A005','B002','B005']
-#name_markers=['D002']
+#name_markers=['A001','B001','D001','A002','A005','B002','B005']
+name_markers=['REANALYSIS']
 #variables=['votemper','vosaline','SSH_inst','SST','SSS']
 variables=['vosaline','votemper']
 dataset_to_substract = ''    
@@ -53,6 +53,9 @@ for name_marker in name_markers:
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
             startdate=datetime.datetime(1975,1,1)
             enddate=datetime.datetime(2005,12,31)
+        elif 'REANALYSIS' in name_marker:
+            startdate=datetime.datetime(1975,1,1)
+            enddate=datetime.datetime(2008,12,31)
         else:
             startdate=datetime.datetime(2006,1,1)
             enddate=datetime.datetime(2058,12,31)
