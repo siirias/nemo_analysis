@@ -6,9 +6,8 @@ for series in $all_series; do
         year="2020"
         depth="0-3"
         in_dir='/scratch/project_2001635/siiriasi/smartsea_data/'${series}'/'
-        out_dir='/scratch/project_2001635/siiriasi/smartsea_data/luke_test/'
-#        for depth in '0-3' '0-12' '12-80' '80-inf'; do
-        for depth in  '0-9'; do
+        out_dir='/scratch/project_2001635/siiriasi/smartsea_data/syke_test/'
+        for depth in '0-3' '0-12' '12-80' '80-inf'; do
             case $depth in
                 "0-3")
                 depthlim="deptht,0,0"
@@ -31,11 +30,11 @@ for series in $all_series; do
             for in_file in $files; do
                 year=$(echo $in_file|grep "m_[0-9][0-9][0-9][0-9]" -o| grep "[0-9]*" -o)
                 echo $year $series 
-#                for m in {0..11}; do
-#                    month=$(expr $m + 1)
-#                    outf=${out_dir}${variable}_${depth}_${series}_${year}_${month}.nc
-#                    ncea  -O -d $depthlim -d time_counter,$m,$m -v $variable $in_file $outf&
-#                done
+                for m in {0..11}; do
+                    month=$(expr $m + 1)
+                    outf=${out_dir}${variable}_${depth}_${series}_${year}_${month}.nc
+                    ncea  -O -d $depthlim -d time_counter,$m,$m -v $variable $in_file $outf&
+                done
                 outf=${out_dir}${variable}_${depth}_${series}_${year}.nc
                 ncea  -O -d $depthlim  -v $variable $in_file $outf&
             done
