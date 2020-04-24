@@ -1,5 +1,5 @@
 #all_series="A001 A002 A005 B001 B002 B005 D001 D002 D005"
-all_series="A001 A002 A005 B001 B002 B005 D001 D002 D005"
+all_series="B001"
 all_variables="SST SSS"
 monthly=true
 for series in $all_series; do
@@ -10,8 +10,11 @@ for series in $all_series; do
         for in_file in $files; do
             year=$(echo $in_file|grep "d_[0-9][0-9][0-9][0-9]" -o| grep "[0-9]*" -o)
             echo $year $series 
-            outf=${out_dir}${variable}_${series}_${year}.nc
-            ncea  -O -v $variable $in_file $outf&
+            for m in {0..11}; do
+                month=$(expr $m + 1)
+                outf=${out_dir}${variable}_${depth}_${series}_${year}_${month}.nc
+                ncea  -O -v $variable $in_file $outf&
+            done
         done
     done
 done

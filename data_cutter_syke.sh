@@ -35,8 +35,9 @@ for series in $all_series; do
                     outf=${out_dir}${variable}_${depth}_${series}_${year}_${month}.nc
                     ncea  -O -d $depthlim -d time_counter,$m,$m -v $variable $in_file $outf&
                 done
+                wait
                 outf=${out_dir}${variable}_${depth}_${series}_${year}.nc
-                ncea  -O -d $depthlim  -v $variable $in_file $outf&
+                ncea  -O -d $depthlim  -v $variable $in_file $outf
             done
         done
     done

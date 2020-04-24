@@ -3,8 +3,11 @@ import re
 import subprocess as sp
 import time
 #all_series=['A001', 'A002', 'A005', 'B001', 'B002', 'B005', 'D001', 'D002', 'D005']
-all_series=['B001']
-all_variables=['SST', 'SSS']
+#all_series=['B001']
+all_series=['A001', 'A002', 'A005', 'B002', 'B005', 'D001', 'D002', 'D005']
+all_series=['D005']
+#all_variables=['SST', 'SSS']
+all_variables=['SBS', 'icethic', 'icecon']
 monthly = True
 one_time_processes =  16
 class ProcessCounter:
@@ -38,7 +41,6 @@ for series in all_series:
     for variable in all_variables:
         in_dir='/scratch/project_2001635/siiriasi/smartsea_data/'+series+'/'
         out_dir='/scratch/project_2001635/siiriasi/smartsea_data/daily_test/'
-        #files=$(ls ${in_dir}*_1d_*_grid_T.nc --color=none)
         file_type = ".*_1d_.*_grid_T.nc"
         files = os.listdir(in_dir)
         files = [f for f in files if re.match(file_type,f)]
@@ -58,5 +60,3 @@ for series in all_series:
                                 stdout =sp.PIPE,\
                                 shell = True)
                 processes.add(sh_output)
-#                ncea  -O -v $variable $in_file $outf&
-#                print("{}\n{}".format(in_file,out_file))
