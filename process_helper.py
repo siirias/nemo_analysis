@@ -33,12 +33,14 @@ class ProcessCounter:
         self.process_list.append(new_process)
         if(len(self.process_list)>=self.max_processes):
             print("Waiting...",len(self.process_list))
-            for p in self.process_list:
-                p.wait()
+            self.wait_all()
+
+    def wait_all(self):
+        for p in self.process_list:
+            p.wait()
             self.process_list = []
             self.time_elapsed = time.time() - self.time_started
             self.time_started = time.time()
             print("Waited {:0.3f} s, wait per process {:0.3f} s".format(\
                     self.time_elapsed, \
                     self.time_elapsed/self.max_processes))
-

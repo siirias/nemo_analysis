@@ -28,3 +28,4 @@ for stat in stats:
                     in_dir, f, \
                     out_dir, f_out_name) 
         processes.add(the_command)
+print("All done!")
