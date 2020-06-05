@@ -43,10 +43,10 @@ ss.root_data_out = "/scratch/project_2001635/siiriasi/smartsea_data/"
 name_markers = ['A005','B002', 'B005']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
-#collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
+collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
 #collapse_style={'name':'depthlat','coords':['longitude']}    
 #collapse_style={'name':'depthlatlon','coords':[]}    
-collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
+#collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
 def calculate_reserve(name_marker, ss, collapse_style): 
 	# Calculates salinity, temperature reserves.
 	# name_marker: set name, e.g. A002
@@ -116,6 +116,7 @@ def calculate_reserve(name_marker, ss, collapse_style):
     is_first = True
     yearly_variable_data = {}
     iris_list = iris.cube.CubeList([])
+    iris_list_mean = iris.cube.CubeList([])
     for num, f in enumerate(files_working):
         temperature = None
         salinity = None
@@ -153,11 +154,14 @@ def calculate_reserve(name_marker, ss, collapse_style):
                     .format(total_salt*1e-9,average_salt*1e3))
             d = salt_content.collapsed(collapse_style['coords'],
                                         iris.analysis.SUM)
+            d_mean = salinity.collapsed(collapse_style['coords'],
+                                        iris.analysis.MEAN)
         all_coords=[]
         for coord in d.coords():
             if coord.name() is not 'time' and coord.shape[0]>1:
                 all_coords.append(coord.name())
         iris_list.append(d)
+        iris_list_mean.append(d_mean)
         print("Analysing {} ({} of {})".format(f, num+1, len(files_working)))
     iris_salt_content = siri_omen.concatenate_cubes(iris_list)
     iris_salt_content.attributes['name'] = "{}-salt-content-{}-{}".format(\
@@ -168,6 +172,17 @@ def calculate_reserve(name_marker, ss, collapse_style):
     iris.save(iris_salt_content, out_file_name)
     print("{}:Cube saved succesfully", out_file_name)
     print(iris_salt_content)
+    
+    iris_salt_mean = siri_omen.concatenate_cubes(iris_list_mean)
+    iris_salt_mean.attributes['name'] = "{}-salt-mean-{}-{}".format(\
+                                                        name_marker,\
+                                                        startdate, enddate)
+    out_file_name = datadir+'mean_{}_{}_{}.nc'.\
+                format(variable_salinity, name_marker, collapse_style['name'])
+    iris.save(iris_salt_content, out_file_name)
+    print("{}:Cube saved succesfully", out_file_name)
+    print(iris_salt_mean)
+
 
 if( __name__ == "__main__"): #just check we are not in any subprocess
     processes = []

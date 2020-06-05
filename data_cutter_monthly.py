@@ -7,7 +7,7 @@ import process_helper as ph
 one_time_processes = 6 
 processes = ph.ProcessCounter(one_time_processes)
 
-all_series = ['A001', 'A002', 'A004', 'A005', 'A007']
+all_series = ['D007', 'D002', 'D004', 'D005', 'D001']
 all_variables = ['kd'] # kd = vertical light attenuation
 all_depths = ['0-3', '0-12', '12-80', '80-inf']
 file_filter = '.*_1m_.*_ptrc_T.nc'  #regular expression

@@ -11,8 +11,8 @@ import matplotlib as mp
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
-from mpl_toolkits.basemap import Basemap
-from mpl_toolkits.basemap import Basemap, shiftgrid, cm
+#from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap, shiftgrid, cm
 import netCDF4 as nc4
 from netCDF4 import Dataset
 from smartseahelper import smh
@@ -26,11 +26,10 @@ import cf_units
 ss=smh()
 ss.grid_type='T'
 ss.interval='m'
-ss.file_name_format='NORDIC-GoB_1{}_{}_{}_grid_{}.nc'
 #folder_start='OUTPUT'
-name_markers=['new_REANALYSIS']
+#name_markers=['new_REANALYSIS']
 #name_markers=['REANALYSIS','A001','D001','C001']
-#name_markers=['A001','B001','C001']
+name_markers=['A001','B001','D001','A002','B002','D002', 'A005','B005','D005']
 #variables = ['SSS', 'SST', 'SSH_inst']
 variables= ['votemper']
 #variables= ['vosaline','votemper']
@@ -41,8 +40,10 @@ if(ss.interval=='m'):
     climatology_time_slots=12
     
 for name_marker in name_markers:
-    folder_start='OUTPUT'
-    ss.save_interval='month'
+    folder_start=''
+    ss.save_interval='year'   # 'month'
+    ss.file_name_format='NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
+    print("Processing {}".format(name_marker))
     for var1 in variables:
         
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
@@ -58,6 +59,9 @@ for name_marker in name_markers:
         else:
             startdate=datetime.datetime(2006,1,1)
             enddate=datetime.datetime(2058,12,31)
+        if 'D' in name_marker:
+            ss.file_name_format='SS-GOB_1{}_{}_{}_grid_{}.nc'
+            
         datadir = ss.root_data_out+"/derived_data/" #where everyt output is stored
         
         ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start,name_marker)

@@ -31,13 +31,14 @@ if( not skip_processed):
     processes.wait_all()
 
 if(not skip_original):
-    stats = ['max','min','mean']
-    variables = ['SSS', 'SST', 'SBS', 'icethic', 'icecon', 'snowthic', 'icevvelo', 'iceuvelo', 'sorunoff']
-    in_dir = '/scratch/project_2001635/siiriasi/smartsea_data/daily_test/'
+    stats = ['vmax','vmin','vmean']
+#    variables = ['SSS', 'SST', 'SBS', 'icethic', 'icecon', 'snowthic', 'icevvelo', 'iceuvelo', 'sorunoff']
+    variables = ['kd']
+    in_dir = '/scratch/project_2001635/siiriasi/smartsea_data/syke_test/'
     for var in variables:
         for stat in stats:
-            out_dir = '/scratch/project_2001635/siiriasi/smartsea_data/daily_test/{}/'.format(stat)
-            the_command = "zip -v {}/{}_monthly_{}.zip {}".format(\
+            out_dir = '/scratch/project_2001635/siiriasi/smartsea_data/syke_test/{}/'.format(stat)
+            the_command = "zip -v {}/{}_monthly_{}_seriesB.zip {}".format(\
                         out_dir, var, \
                         stat, \
                         " {}/{}*.nc".format(out_dir,var)) 
