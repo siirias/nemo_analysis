@@ -26,7 +26,8 @@ folder_start = ''
 #name_markers = ['D001']
 name_markers = ['A001']
 variable_cover = 'soicecov'
-ice_limit = 0.2
+ice_limit = 0.3
+crop_days = int(365/2)  # just to crop this much from start and end of two year set, to get the winter time.
 def empty_field_like(sample_data, new_name = 'noname'):
     empty = sample_data[0,:,:] # assumes time, x, y
     empty[:,:] = np.zeros(empty.shape)
@@ -72,31 +73,26 @@ for name_marker in name_markers:
         else: 
             data = xr.concat([prev_data, this_years_data], 'time_counter')
             #first find real first and last ice (which is used to find the mid-winter)
-            first_real_ice = empty_field_like(data) 
-            last_real_ice = empty_field_like(data) 
-            for time in range(data.shape[0]):
-                free_water = empty_field_like(data,'first_real_ice_day')
-                free_water = free_water.where(data[time,:,:] < ice_limit, time)
-                first_real_ice = free_water.where(first_water < 0.001 , first_real_ice)
-            for time in range(data.shape[0]-1,-1,-1):
-                free_water = empty_field_like(data,'last_real_ice_day')
-                free_water = free_water.where(data[time,:,:] > ice_limit, time) # add last year's days here
-                last_real_ice = free_water.where(last_water < 0.001 , last_real_ice)
+            first_ice = empty_field_like(data) 
+            last_ice = empty_field_like(data) 
+            for time in range(crop_days, data.shape[0]-crop_days):
+                tmp = empty_field_like(data)
+                tmp = tmp.where(data[time,:,:] < ice_limit, time)
+                first_ice = tmp.where(first_ice < 0.001 , first_ice)
+            first_ice = first_ice.rename('first_ice_day')
+
+            for time in range(data.shape[0]-crop_days, crop_days, -1):
+                tmp = empty_field_like(data)
+                tmp = tmp.where(data[time,:,:] < ice_limit, time) 
+                last_ice = tmp.where(last_ice < 0.001 , last_ice)
+            last_ice = last_ice.rename('last_ice_day')
             
-            for time in range(data.shape[0]-1,-1,-1):
-                free_water = empty_field_like(data,'first_ice_day')
-                free_water = free_water.where(data[time,:,:] > ice_limit, time)
-                first_water = free_water.where(first_water < 0.001 , first_water)
-            for time in range(data.shape[0]):
-                free_water = empty_field_like(data,'last_ice_day')
-                free_water = free_water.where(data[time,:,:] > ice_limit, time+prev_data_shape[0]) # add last year's days here
-                last_water = free_water.where(last_water < 0.001 , last_water)
-            first_ice = first_water + 1
-            first_ice = data[0,:,:].where(np.isnan(data[0,:,:]),first_ice)
-            last_ice = last_water - 1
-            last_ice = data[0,:,:].where(np.isnan(data[0,:,:]),last_ice)
+            mid_winter = (first_ice + last_ice)/2.0
+            mid_winter = mid_winter.rename('middle_day_of_the_ice_season') 
+            ice_season_length = last_ice - first_ice
+            ice_season_length = ice_season_length.rename('ice_season_length') 
             out_dir = ss.root_data_out + '/tmp/'
-            tmp = xr.merge([prev_first_water, last_water], compat='override')
+            tmp = xr.merge([first_ice, last_ice, ice_season_length, mid_winter], compat='override')
             tmp.to_netcdf(out_dir + out_name)
             out_name = re.search('(.*)\.nc',f).groups()[0]+'_icetest.nc'
         prev_first_water = first_water[:,:]
