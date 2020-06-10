@@ -24,8 +24,10 @@ folder_start = ''
 #name_markers = ['new_REANALYSIS']
 #name_markers = ['D001','C001','D002', 'D005', 'C002']
 #name_markers = ['D001']
-name_markers = ['A001']
+#name_markers = ['A001', 'A002','A005','B001','B002','B005','D001','D002','D005']
+name_markers = ['A002','A005','B002','B005','D002','D005']
 variable_cover = 'soicecov'
+continuous_ice_limit = 0.2
 ice_limit = 0.3
 crop_days = int(365/2)  # just to crop this much from start and end of two year set, to get the winter time.
 def empty_field_like(sample_data, new_name = 'noname'):
@@ -34,6 +36,8 @@ def empty_field_like(sample_data, new_name = 'noname'):
     return empty.rename(new_name)
 
 for name_marker in name_markers:
+    startdate = datetime.datetime(2006, 1, 1)
+    enddate = datetime.datetime(2060, 12, 31)
     ss.file_name_format = 'NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
     if 'D' in name_marker or 'C' in name_marker:
         ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
@@ -68,32 +72,72 @@ for name_marker in name_markers:
 
         if(first_year):
             first_year = False
-            out_name = re.search('(.*)\.nc',f).groups()[0]+'_icetest.nc'
+            year = re.search('_1d_(\d\d\d\d)',f).groups()[0]
+            out_name = 'ice_season_{}-{}_set_{}.nc'.format(year, str(int(year)+1), name_marker)
             prev_data = this_years_data[:,:,:]
         else: 
             data = xr.concat([prev_data, this_years_data], 'time_counter')
-            #first find real first and last ice (which is used to find the mid-winter)
+            # First let's just find the first and last ice day for the winter,
+            # without thinking the continuous ice-time.
+            # This is then used to guess the mid-winter,
+            # and that is used to calculate the contnuous ice-season.
             first_ice = empty_field_like(data) 
             last_ice = empty_field_like(data) 
             for time in range(crop_days, data.shape[0]-crop_days):
                 tmp = empty_field_like(data)
                 tmp = tmp.where(data[time,:,:] < ice_limit, time)
                 first_ice = tmp.where(first_ice < 0.001 , first_ice)
-            first_ice = first_ice.rename('first_ice_day')
+            first_ice = first_ice.rename('first_ice_day')+1 #+1 to fix the index 0
 
             for time in range(data.shape[0]-crop_days, crop_days, -1):
                 tmp = empty_field_like(data)
                 tmp = tmp.where(data[time,:,:] < ice_limit, time) 
                 last_ice = tmp.where(last_ice < 0.001 , last_ice)
-            last_ice = last_ice.rename('last_ice_day')
+            last_ice = last_ice.rename('last_ice_day')+1 #+1 to fix the index 0   
             
             mid_winter = (first_ice + last_ice)/2.0
             mid_winter = mid_winter.rename('middle_day_of_the_ice_season') 
             ice_season_length = last_ice - first_ice
             ice_season_length = ice_season_length.rename('ice_season_length') 
+            # Now we have mid winter, and first and last ice-occurences.
+            # Next we need to figure out the continuous ice-season, around the mid-winter
+            first_continuous_ice = empty_field_like(data) 
+            last_continuous_ice = empty_field_like(data) 
+            for time in range(crop_days, data.shape[0]-crop_days):
+                tmp = empty_field_like(data)
+                tmp = tmp.where(data[time,:,:] > continuous_ice_limit, time)
+                # tmp has time in the ones with water
+                tmp = tmp.where(mid_winter<time,0)
+                # tmp has time in ones with water, where time is past midwinter
+                last_continuous_ice = tmp.where(last_continuous_ice < 0.001 , last_continuous_ice)
+            last_continuous_ice = last_continuous_ice.rename('last_continuous_ice_day')+1 #+1 to fix the index 0
+
+            for time in range(data.shape[0]-crop_days, crop_days, -1):
+                tmp = empty_field_like(data)
+                tmp = tmp.where(data[time,:,:] > continuous_ice_limit, time)
+                # tmp has time in the ones with water
+                tmp = tmp.where(mid_winter>time,0)
+                # tmp has time in ones with water, where time before  midwinter
+                first_continuous_ice = tmp.where(first_continuous_ice < 0.001 , first_continuous_ice)
+            first_continuous_ice = first_continuous_ice.rename('first_continuous_ice_day')+1 #+1 to fix the index 0
+            continuous_mid_winter = (first_continuous_ice + last_continuous_ice)/2.0
+            continuous_mid_winter = continuous_mid_winter.rename('middle_day_of_the_continuous_ice_season') 
+            continuous_ice_season_length = last_continuous_ice - first_continuous_ice
+            continuous_ice_season_length = continuous_ice_season_length.rename('continuous_ice_season_length') 
+
+            length_diff = (ice_season_length - continuous_ice_season_length).rename('length_diff')
+            mid_diff = (mid_winter - continuous_mid_winter).rename('mid_diff')
+            start_diff = (first_ice - first_continuous_ice).rename('start_diff')
+            end_diff = (last_ice - last_continuous_ice).rename('end_diff')
+
             out_dir = ss.root_data_out + '/tmp/'
-            tmp = xr.merge([first_ice, last_ice, ice_season_length, mid_winter], compat='override')
+            tmp = xr.merge([first_ice, last_ice, ice_season_length, mid_winter,\
+                            first_continuous_ice, last_continuous_ice, \
+                            continuous_ice_season_length, continuous_mid_winter,
+                            length_diff, mid_diff, start_diff, end_diff], compat='override')
             tmp.to_netcdf(out_dir + out_name)
-            out_name = re.search('(.*)\.nc',f).groups()[0]+'_icetest.nc'
+            year = re.search('_1d_(\d\d\d\d)',f).groups()[0]
+#            out_name = re.search('(.*)\.nc',f).groups()[0]+'_icetest.nc'
+            out_name = 'ice_season_{}-{}_set_{}.nc'.format(year, str(int(year)+1), name_marker)
         prev_first_water = first_water[:,:]
         prev_data_shape = this_years_data.shape
