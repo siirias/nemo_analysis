@@ -37,7 +37,7 @@ formatters = {\
 table = pd.DataFrame({  'Name':names, \
                         'Latitude':lats,\
                         'Longitude':lons,\
-                        'Model depth':deths})
+                        'Model depth':depths})
 
 table = table.sort_values('Latitude',ascending = False)
 table_str = table.to_latex(formatters = formatters, index = False)
