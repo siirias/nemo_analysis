@@ -57,7 +57,8 @@ def set_style(set_name,alpha=1.0):
         'D':'g',
         'h':'k',
         'RCP':'r',
-        'HISTORY':'b'
+        'HISTORY':'b',
+        'REANALYSIS':'k'
     }
     scen_styles = {
         'history':'--',
@@ -262,7 +263,7 @@ if analyze_salt_profiles:
     for point in points:
         for depth_in in all_depths:
 #            in_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
-            in_dir = sm.root_data_in+'derived_data/'
+            in_dir = sm.root_data_in+'derived_data/extracted_profiles/'
             name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
             files = os.listdir(in_dir)
             files = [i for i in files if re.match(name_format,i)]
@@ -317,7 +318,7 @@ if analyze_salt_profiles:
                             s,\
                             fitting[0]*365.15)
                     if(plot_trends):
-                        plt.plot(mp.dates.num2date(fitting_time),\
+                        plt.plot(d['time'],\
                                  fitting[0]*fitting_time+fitting[1],\
                                  label='_nolegend_', zorder=15,**set_style(s,0.4))
             plt.legend()
