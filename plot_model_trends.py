@@ -14,15 +14,20 @@ import pandas as pd
 import os
 import re
 import netCDF4
+import smartseahelper
 from netCDF4 import Dataset
+from pandas.plotting import register_matplotlib_converters
+register_matplotlib_converters()
 
-out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
+#out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
+sm = smartseahelper.smh()
+out_dir = sm.root_data_out+"Images/"
 fig_factor = 2.0
 fig_size = (10*fig_factor,5*fig_factor)
-analyze_salt_content = False
+analyze_salt_content = True
 analyze_heat_content = True
-analyze_salt_profiles = False
-analyze_salt_trends = False
+analyze_salt_profiles = True
+analyze_salt_trends = True
 plot_trends = True
 
 create_ensembles = True
@@ -52,7 +57,8 @@ def set_style(set_name,alpha=1.0):
         'D':'g',
         'h':'k',
         'RCP':'r',
-        'HISTORY':'b'
+        'HISTORY':'b',
+        'REANALYSIS':'k'
     }
     scen_styles = {
         'history':'--',
@@ -102,7 +108,8 @@ class ValueSet():
         
 if analyze_salt_content:
     variable = 'sea_water_absolute_salinity'
-    in_dir ='D:\\Data\\SmartSeaModeling\\'
+#    in_dir ='D:\\Data\\SmartSeaModeling\\'
+    in_dir = sm.root_data_in+'derived_data/'
     name_format = 'reserve_salinity_(.*)_total.nc'
     files = os.listdir(in_dir)
     dat={}
@@ -137,7 +144,8 @@ if analyze_salt_content:
             label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
             plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
             if(plot_trends):
-                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+#                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+                plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
     plt.legend()
     plt.savefig(out_dir+"total_salt_{}-{}.png".format(\
                 period['min'].year,period['max'].year))
@@ -148,7 +156,8 @@ gathered_profile_trends = ValueSet()
 # ANALYSE HEAT CONTENT
 if analyze_heat_content:
     variable = 'thermal_energy'
-    in_dir ='D:\\Data\\SmartSeaModeling\\'
+#    in_dir ='D:\\Data\\SmartSeaModeling\\'
+    in_dir = sm.root_data_in+'derived_data/'
     name_format = 'reserve_votemper_(.*).nc'
     files = os.listdir(in_dir)
     min_depth = 80.0
@@ -205,7 +214,7 @@ if analyze_heat_content:
             label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
             plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
             if(plot_trends):
-                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+                plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
     plt.legend()
     plt.savefig(out_dir+"total_heat_{}-{}.png".format(\
                 period['min'].year,period['max'].year))
@@ -234,7 +243,7 @@ if analyze_heat_content:
                 label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
                 plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
                 if(plot_trends):
-                    plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+                    plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
         plt.legend()
             
             
@@ -253,10 +262,12 @@ if analyze_salt_profiles:
         variable_name = "Temperature"
     for point in points:
         for depth_in in all_depths:
-            in_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
+#            in_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
+            in_dir = sm.root_data_in+'derived_data/extracted_profiles/'
             name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
             files = os.listdir(in_dir)
             files = [i for i in files if re.match(name_format,i)]
+            depth = 0.0  # default if no other defined
             dat={}
             for f in files:
                 set_name=re.search(name_format,f)
@@ -307,14 +318,14 @@ if analyze_salt_profiles:
                             s,\
                             fitting[0]*365.15)
                     if(plot_trends):
-                        plt.plot(mp.dates.num2date(fitting_time),\
+                        plt.plot(d['time'],\
                                  fitting[0]*fitting_time+fitting[1],\
                                  label='_nolegend_', zorder=15,**set_style(s,0.4))
             plt.legend()
             if(fixed_axis):
                 plt.ylim(fixed_axis[0],fixed_axis[1])
             print("saving",depth,point)
-            plt.savefig(out_dir+"\\profiles\\"+\
+            plt.savefig(out_dir+"profiles/"+\
                         "{}_profile_{}_{:0.1f}m_{}-{}.png".format(\
                         variable_name,\
                         point,\

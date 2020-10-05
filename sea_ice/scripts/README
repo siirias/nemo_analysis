@@ -1,0 +1,12 @@
+Ice_data_stations.py
+- This script extracts sea ice data (concetration, volume) for coastal stations.
+- Daily data is saved in txt files for further analysis and plotting. Output files: Ice_season_{station_name}_{run}.txt
+- Stations: Kemi, Oulu (Saapaskari), Kalajoki, Kylmäpihlaja and Sälgrund
+
+
+IceSeason_MaxH_coastal_stations.py 
+- This script calculates the length of ice season and the annual maximum ice thickness in coastal stations
+- Input data: time series of sea ice concentration and volume, extracted from model output with Ice_data_stations.py
+- Outputs: AnnualMax_H_{station_name}_{run}.txt and Ice_season_L_{station_name}_{run}.txt
+
+
