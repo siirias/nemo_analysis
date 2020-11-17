@@ -11,6 +11,9 @@ in_file = "icevolume_A005_2040.nc"
 in_dir = "C:\\Users\\siirias\\Downloads\\anton_testi\\"
 
 
+#in_file = "sst_data.nc"
+#in_dir = "C:\\Users\\siirias\\Downloads\\"
+
 #test with xarray, should only need the xarray package
 print("******Loading with XArray******")
 d=xr.open_dataset(in_dir+in_file)

@@ -40,6 +40,20 @@ color_maps = {"Temperature_monthly":cmo.cm.thermal,\
 #serie_types = [ "SBS_2vs1_diff", "SBS_5vs2_diff","SSS_2vs1_diff", "SSS_5vs1_diff", "SSS_5vs2_diff"]
 serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
 the_proj = ccrs.PlateCarree()
+set_configurations = open('climatology_dataset_types.txt').readlines()
+
+# all these are deined later in config file
+file0 = None
+file = None
+output_dir_plus = None
+output_dir_plus_means = None
+set_name = None
+set_name0 = None
+color_map = None
+var_lims= None
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
 
 def create_main_map(the_proj):
         fig=plt.figure(figsize=figure_size)
@@ -93,113 +107,125 @@ for serie_type in serie_types:
     mod_shape_lon = 340
     data_set = "ABD"
     data_set = "D"
-    # load the actual data:
-    if(serie_type == "SBS_5vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SBS_{}5vs1\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SBS"
-        var = all_variables[var_name]
-    
-    if(serie_type == "SBS_2vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}002.nc".format(data_set)
-        output_dir_plus = "\\SBS_{}2vs1\\".format(data_set)
-        set_name = "{}002".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SBS"
-        var = all_variables[var_name]
-
-    if(serie_type == "SBS_5vs2_diff"):
-        file0 = "daily_average_{}002.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SBS_{}5vs2\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}002".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SBS"
-        var = all_variables[var_name]
-    if(serie_type == "SSS_5vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SSS_{}5vs1\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SSS"
-        var = all_variables[var_name]
-    
-    if(serie_type == "SSS_2vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}002.nc".format(data_set)
-        output_dir_plus = "\\SSS_{}2vs1\\".format(data_set)
-        set_name = "{}002".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SSS"
-        var = all_variables[var_name]
-
-    if(serie_type == "SSS_5vs2_diff"):
-        file0 = "daily_average_{}002.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SSS_{}5vs2\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}002".format(data_set)
-        color_map = cmo.cm.diff
-        var_lims=[-0.5,0.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SSS"
-        var = all_variables[var_name]
-    if(serie_type == "SST_5vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = 'RdBu_r'
-        var_lims=[-2.5,2.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SST"
-        var = all_variables[var_name]
-    if(serie_type == "SST_2vs1_diff"):
-        file0 = "daily_average_{}001.nc".format(data_set)
-        file = "daily_average_{}002.nc".format(data_set)
-        output_dir_plus = "\\SST_{}2vs1\\".format(data_set)
-        set_name = "{}002".format(data_set)
-        set_name0 = "{}001".format(data_set)
-        color_map = 'RdBu_r'
-        var_lims=[-2.5,2.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SST"
-        var = all_variables[var_name]
-    if(serie_type == "SST_5vs2_diff"):
-        file0 = "daily_average_{}002.nc".format(data_set)
-        file = "daily_average_{}005.nc".format(data_set)
-        output_dir_plus = "\\SST_{}5vs2\\".format(data_set)
-        set_name = "{}005".format(data_set)
-        set_name0 = "{}002".format(data_set)
-        color_map = 'RdBu_r'
-        var_lims=[-2.5,2.5]
-        #var_name = "Temperature_monthly"
-        var_name = "SST"
-        var = all_variables[var_name]
-
-
-
+    # read configuration from a file.
+    # note: xonfig files are python statements,
+    # this doesn't check for malignant code or anything like that,
+    # so be vary.
+    in_set = False
+    for i in set_configurations:
+        r = re.search("#SET (.*)",i.strip())
+        if(r):
+            in_set = r.groups()[0]
+        elif(in_set == serie_type):
+            print(i)
+            exec(i)    
+#    # load the actual data:
+#    if(serie_type == "SBS_5vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SBS_{}5vs1\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SBS"
+#        var = all_variables[var_name]
+#    
+#    if(serie_type == "SBS_2vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}002.nc".format(data_set)
+#        output_dir_plus = "\\SBS_{}2vs1\\".format(data_set)
+#        set_name = "{}002".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SBS"
+#        var = all_variables[var_name]
+#
+#    if(serie_type == "SBS_5vs2_diff"):
+#        file0 = "daily_average_{}002.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SBS_{}5vs2\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}002".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SBS"
+#        var = all_variables[var_name]
+#    if(serie_type == "SSS_5vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SSS_{}5vs1\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SSS"
+#        var = all_variables[var_name]
+#    
+#    if(serie_type == "SSS_2vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}002.nc".format(data_set)
+#        output_dir_plus = "\\SSS_{}2vs1\\".format(data_set)
+#        set_name = "{}002".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SSS"
+#        var = all_variables[var_name]
+#
+#    if(serie_type == "SSS_5vs2_diff"):
+#        file0 = "daily_average_{}002.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SSS_{}5vs2\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}002".format(data_set)
+#        color_map = cmo.cm.diff
+#        var_lims=[-0.5,0.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SSS"
+#        var = all_variables[var_name]
+#    if(serie_type == "SST_5vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = 'RdBu_r'
+#        var_lims=[-2.5,2.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SST"
+#        var = all_variables[var_name]
+#    if(serie_type == "SST_2vs1_diff"):
+#        file0 = "daily_average_{}001.nc".format(data_set)
+#        file = "daily_average_{}002.nc".format(data_set)
+#        output_dir_plus = "\\SST_{}2vs1\\".format(data_set)
+#        set_name = "{}002".format(data_set)
+#        set_name0 = "{}001".format(data_set)
+#        color_map = 'RdBu_r'
+#        var_lims=[-2.5,2.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SST"
+#        var = all_variables[var_name]
+#    if(serie_type == "SST_5vs2_diff"):
+#        file0 = "daily_average_{}002.nc".format(data_set)
+#        file = "daily_average_{}005.nc".format(data_set)
+#        output_dir_plus = "\\SST_{}5vs2\\".format(data_set)
+#        set_name = "{}005".format(data_set)
+#        set_name0 = "{}002".format(data_set)
+#        color_map = 'RdBu_r'
+#        var_lims=[-2.5,2.5]
+#        #var_name = "Temperature_monthly"
+#        var_name = "SST"
+#        var = all_variables[var_name]
+#
+#
+#
     data = xr.open_dataset(data_dir+file)
     data0 = xr.open_dataset(data_dir+file0)
     try:
@@ -236,10 +262,10 @@ for serie_type in serie_types:
             cb.set_label('Difference')
             plt.title("{} Diff, Whole Year \n {}-{}".format(var_name,file,file0))
             filename = "{}_{}vs{}_{}.png".format(var,set_name,set_name0,i)
-            plt.savefig(output_dir+output_dir_plus+filename,\
+            plt.savefig(output_dir+output_dir_plus_means+filename,\
                             facecolor='w',dpi=fig_dpi,bbox_inches='tight')
     
-        plt.close()
+            plt.close()
     if(plot_daily_figures):
         for time_step in range(365):
             #First let's plot the general map:
