@@ -20,9 +20,20 @@ import cmocean as cmo
 
 output_dir = "D:\\Data\\Figures\\SmartSea\\"
 output_dir_plus = ""
-fig_dpi = 300
+measurement_dir = "D:\\Data\\SmartSeaModeling\\Climatologies\\"
 data_dir = "E:\\SmartSea\\climatologies\\"  
 bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
+
+fig_dpi = 300
+
+mod_min_lat = 59.92485
+mod_max_lat = 65.9080876
+mod_min_lon = 16.40257
+mod_max_lon = 25.8191425
+mod_shape_lat = 360
+mod_shape_lon = 340
+
+
 all_variables = {"Temperature_monthly":"votemper",\
                  "Salinity_monthly":"vosaline",
                  "SSS":"SSS",
@@ -42,14 +53,21 @@ serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
 serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
 serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
 serie_types = [ "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
+serie_types = [ "SSS_1", "SBS_1", "SST_1", "SST_2", "SST_5"]
+
+serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
+serie_types = [ "SST_1vsABD1_diff_test"]
+
 data_sets = ["ABD", "A", "B", "D"]
+data_sets = ["ABD"]
 #data_sets = ["A", "B", "D"]
 plot_bathymetry = False
 plot_bathy_contours = True
 plot_yearly_average = True
 plot_daily_figures = False
-
-
+comparison = True   # This one is set depending on do 
+                    # the setup give name for another dataset
+comparison_climatology = 'BNSC'  # None, 'BNSC', 'SDC'  # if not none, overrides configuration comparison
 
 the_proj = ccrs.PlateCarree()
 # read configuration from a file.
@@ -106,17 +124,20 @@ def create_main_map(the_proj):
                 cb.set_label('Depth (m)')
         return fig
 
+def interp_for_climatology(data, clim_data):
+    interp_data = data.copy()
+    lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)  # This is a gludge, as the original lat lon ar bit weird.
+    lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
+    interp_data['y'] = lat
+    interp_data['x'] = lon
+    interp_data = interp_data.interp(y=clim_data['lat'],x=clim_data['lon'])
+    return interp_data
+
 for serie_type in serie_types:
     figure_size = (10,10)
     plot_area = [17.0, 26.0, 60.0, 66.0]
     bathy_max = 250.0
     bathy_levels = list(np.arange(0,bathy_max,50.0))  # number or list of numbers
-    mod_min_lat = 59.92485
-    mod_max_lat = 65.9080876
-    mod_min_lon = 16.40257
-    mod_max_lon = 25.8191425
-    mod_shape_lat = 360
-    mod_shape_lon = 340
     for data_set in data_sets:
         in_set = False
         for i in set_configurations:
@@ -127,7 +148,22 @@ for serie_type in serie_types:
                 print(i)
                 exec(i)    
         data = xr.open_dataset(data_dir+file)
-        data0 = xr.open_dataset(data_dir+file0)
+        if(len(file0)>0):
+            var0 = var  # change if comparing to measurements which have other names
+            if(comparison_climatology == 'BNSC'):
+                plot_yearly_average = True
+                plot_daily_figures = False
+                data0 = xr.open_dataset(measurement_dir+'BNSC_BothnianSea_inter20062015_TS.nc')
+                data = interp_for_climatology(data,data0)
+                set_name0 = 'BNSC'
+                file0 = 'BNSC'
+                if(var == 'SST'):
+                    var0 = 'temperature_firstguess'
+            else:
+                data0 = xr.open_dataset(data_dir+file0)
+            comparison = True
+        else:
+            comparison = False
         try:
             os.mkdir(output_dir+output_dir_plus)
         except:
@@ -135,26 +171,43 @@ for serie_type in serie_types:
         #first plot the yearly average:
         if(plot_yearly_average):
             day_filters = {
-                    "Year":slice(0,-1),
+                    "Year":slice(0,None),
                     "DJF":[slice(0,58),slice(337,368)],
                     "MAM":slice(59,151),
                     "JJA":slice(152,244),
                     "SON":slice(245,336)}
+            day_filters0 = day_filters.copy() 
             for i in day_filters:
-                fig = create_main_map(the_proj)             
-                lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
-                lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
-                lon,lat = np.meshgrid(lon,lat)
+                fig = create_main_map(the_proj)
+                if(comparison_climatology == None):
+                    lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
+                    lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
+                    lon,lat = np.meshgrid(lon,lat)
+                    d0_dat = data0[var0][:,:,:]
+                else: # data has been modified, so get the lat lon there
+                    lat = np.array(data['lat'])
+                    lon = np.array(data['lon'])
+                    d0_dat = data0[var0][:,0,:,:]
+                    day_filters0 = {
+                            "Year":slice(0,None),
+                            "DJF":[slice(0,2),slice(11,None)],
+                            "MAM":slice(2,5),
+                            "JJA":slice(5,8),
+                            "SON":slice(8,11)}
                 if(type(day_filters[i]) == list):
                     d = np.mean(np.concatenate(
                             (data[var][day_filters[i][0],:,:],
                              data[var][day_filters[i][1],:,:])),0)
-                    d0 = np.mean(np.concatenate(
-                            (data0[var][day_filters[i][0],:,:],
-                             data0[var][day_filters[i][1],:,:])),0)
+                    if(comparison):
+                        d0 = np.mean(np.concatenate(
+                                (d0_dat[day_filters0[i][0],:,:],
+                                 d0_dat[day_filters0[i][1],:,:])),0)
                 else:
                     d = np.mean(data[var][day_filters[i],:,:],0)
-                    d0 = np.mean(data0[var][day_filters[i],:,:],0)
+                    if(comparison):
+                        d0 = np.mean(d0_dat[day_filters0[i],:,:],0)
+                if(not comparison):
+                    d0 = np.zeros(d.shape)
                 #d = np.ones(d.shape)
                 plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
                            vmin = var_lims[0], vmax = var_lims[1])
@@ -165,6 +218,7 @@ for serie_type in serie_types:
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         
+                print("Saved: {}".format(output_dir+output_dir_plus_means+filename))
                 plt.close()
         if(plot_daily_figures):
             for time_step in range(365):
@@ -181,19 +235,27 @@ for serie_type in serie_types:
                 #d = xr.where(not np.isnan(data[var][0,0,:,:]),data[var][0,0,:,:],None)
                 #d = xr.where(data[var][0,0,:,:] != 0.0, data[var][0,0,:,:], None)
                 d = data[var][time_step,:,:]
-                d0 = data0[var][time_step,:,:]
+                if(comparison):
+                    d0 = data0[var][time_step,:,:]
+                else:
+                    d0 = np.zeros(d.shape)
                 #d = np.ones(d.shape)
                 plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
                            vmin = var_lims[0], vmax = var_lims[1])
                 cb=plt.colorbar()
                 cb.set_label('Difference')
                 plt.title("{} Diff, day: {:03d} \n {}-{}".format(var_name,time_step,file,file0))
-                filename = "{}_{}vs{}_{:03d}.png".format(var,set_name,set_name0,time_step)
+                if(comparison):
+                    filename = "{}_{}vs{}_{:03d}.png".format(var,set_name,set_name0,time_step)
+                else:
+                    filename = "{}_{}_{:03d}.png".format(var,set_name,time_step)
+                    
                 plt.savefig(output_dir+output_dir_plus+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
-            
+                print("Saved: {}".format(output_dir+output_dir_plus+filename))
                 plt.close()
         data.close()
-        data0.close()
+        if(comparison):
+            data0.close()
     
     
