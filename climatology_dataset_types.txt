@@ -219,7 +219,7 @@ output_dir_plus_means = "\\YearSalinity\\1\\"
 set_name = "{}001".format(data_set)
 set_name0 = ""
 color_map = cmo.cm.haline
-var_lims=[0.0,8.0]
+var_lims=[0.0,7.0]
 var_name = "SSS"
 var = all_variables[var_name]
 
@@ -231,7 +231,7 @@ output_dir_plus_means = "\\YearSalinity\\1\\"
 set_name = "{}001".format(data_set)
 set_name0 = ""
 color_map = cmo.cm.haline
-var_lims=[0.0,8.0]
+var_lims=[0.0,10.0]
 var_name = "SBS"
 var = all_variables[var_name]
 
@@ -273,3 +273,16 @@ color_map = 'RdBu_r'
 var_lims=[-4.0,4.0]
 var_name = "SST"
 var = all_variables[var_name]
+
+#SET SBS_1vsABD1_diff_test
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBS_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = cmo.cm.diff
+var_lims=[-1.5,1.5]
+var_name = "SBS"
+var = all_variables[var_name]
+

@@ -58,7 +58,8 @@ serie_types = [ "SSS_1", "SBS_1", "SST_1", "SST_2", "SST_5"]
 
 serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
 serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
-#serie_types = [ "SBS_1vsABD1_diff_test"]
+serie_types = [ "SBS_1vsABD1_diff_test"]
+serie_types = [ "SSS_1", "SBS_1", "SST_1"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -69,7 +70,7 @@ plot_yearly_average = True
 plot_daily_figures = False
 comparison = True   # This one is set depending on do 
                     # the setup give name for another dataset
-comparison_climatology = 'TSO50'  # None, 'BNSC', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+comparison_climatology = 'SDC'  # None, 'BNSC', 'SDC' 'TSO50' # if not none, overrides configuration comparison
 
 the_proj = ccrs.PlateCarree()
 # read configuration from a file.
@@ -150,7 +151,7 @@ for serie_type in serie_types:
                 print(i)
                 exec(i)    
         data = xr.open_dataset(data_dir+file)
-        if(len(file0)>0):
+        if(len(file0)>0 or comparison_climatology):
             var0 = var  # change if comparing to measurements which have other names
             if(comparison_climatology == 'BNSC'):
                 plot_yearly_average = True
@@ -165,7 +166,7 @@ for serie_type in serie_types:
                     var0 = 'salinity_oan'
                 if(var == 'SBS'):
                     var0 = 'salinity_oan'
-            if(comparison_climatology == 'SDC'):
+            elif(comparison_climatology == 'SDC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
                 data0 = xr.open_dataset(measurement_dir+'SDC_BAL_CLIM_T_1955_2014_00625_m.nc')
@@ -184,7 +185,7 @@ for serie_type in serie_types:
                     data0.close()
                     data0 = xr.open_dataset(measurement_dir+\
                             'SDC_BAL_CLIM_S_1955_2014_00625_m.nc')
-            if(comparison_climatology == 'TSO50'):
+            elif(comparison_climatology == 'TSO50'):
                 plot_yearly_average = True
                 plot_daily_figures = False
                 data0 = xr.open_dataset(measurement_dir+'tso50.nc')
@@ -226,8 +227,8 @@ for serie_type in serie_types:
                     lon,lat = np.meshgrid(lon,lat)
                     d0_dat = data0[var0][:,:,:]
                 else: # data has been modified, so get the lat lon there
-                    lat = np.array(data['lat'])
-                    lon = np.array(data['lon'])
+                    lat = np.array(data0['lat'])
+                    lon = np.array(data0['lon'])
                     d0_dat = data0[var0][:,0,:,:]
                     if(var == 'SBS'): # have to gather bottom layer
                         d0_dat = smh.get_bottom(None,\
@@ -243,64 +244,28 @@ for serie_type in serie_types:
                     d = np.mean(np.concatenate(
                             (data[var][day_filters[i][0],:,:],
                              data[var][day_filters[i][1],:,:])),0)
-                    if(comparison):
-                        d0 = np.mean(np.concatenate(
-                                (d0_dat[day_filters0[i][0],:,:],
-                                 d0_dat[day_filters0[i][1],:,:])),0)
+                    d0_dat = np.mean(np.concatenate(
+                            (d0_dat[day_filters0[i][0],:,:],
+                             d0_dat[day_filters0[i][1],:,:])),0)
                 else:
                     d = np.mean(data[var][day_filters[i],:,:],0)
-                    if(comparison):
-                        d0 = np.mean(d0_dat[day_filters0[i],:,:],0)
-                if(not comparison):
-                    d0 = np.zeros(d.shape)
+                    d0_dat = np.mean(d0_dat[day_filters0[i],:,:],0)
+#                if(not comparison):
+#                    d0_dat = np.zeros(d.shape)
                 #d = np.ones(d.shape)
-                plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
+                plt.pcolor(lon,lat,d0_dat,transform = the_proj, cmap = color_map, \
                            vmin = var_lims[0], vmax = var_lims[1])
                 cb=plt.colorbar()
-                cb.set_label('Difference')
-                plt.title("{} Diff, {} \n {}-{}".format(var_name,i,file,file0))
-                filename = "{}_{}vs{}_{}.png".format(var,set_name,set_name0,i)
+                cb.set_label(var0)
+                plt.title("{}  {} \n {}".format(var_name,i,file0))
+                filename = "Measured_{}_{}_{}.png".format(var,set_name0,i)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         
                 print("Saved: {}".format(output_dir+output_dir_plus_means+filename))
                 plt.close()
-        if(plot_daily_figures):
-            for time_step in range(365):
-                #First let's plot the general map:
-                fig = create_main_map(the_proj)             
-                #color_map = color_maps[var_name]
-                #lat_orig = xr.where(data["nav_lat"]!=0.0,data["nav_lat"],None)
-                #lon_orig = xr.where(data["nav_lon"]!=0.0,data["nav_lon"],None)
-                # the original ones are just broken for this purpose,
-                # have to do this manually for now:
-                lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
-                lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
-                lon,lat = np.meshgrid(lon,lat)
-                #d = xr.where(not np.isnan(data[var][0,0,:,:]),data[var][0,0,:,:],None)
-                #d = xr.where(data[var][0,0,:,:] != 0.0, data[var][0,0,:,:], None)
-                d = data[var][time_step,:,:]
-                if(comparison):
-                    d0 = data0[var][time_step,:,:]
-                else:
-                    d0 = np.zeros(d.shape)
-                #d = np.ones(d.shape)
-                plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
-                           vmin = var_lims[0], vmax = var_lims[1])
-                cb=plt.colorbar()
-                cb.set_label('Difference')
-                plt.title("{} Diff, day: {:03d} \n {}-{}".format(var_name,time_step,file,file0))
-                if(comparison):
-                    filename = "{}_{}vs{}_{:03d}.png".format(var,set_name,set_name0,time_step)
-                else:
-                    filename = "{}_{}_{:03d}.png".format(var,set_name,time_step)
-                    
-                plt.savefig(output_dir+output_dir_plus+filename,\
-                                facecolor='w',dpi=fig_dpi,bbox_inches='tight')
-                print("Saved: {}".format(output_dir+output_dir_plus+filename))
-                plt.close()
         data.close()
-        if(comparison):
-            data0.close()
-    
+#        if(comparison):
+#            data0.close()
+#    
     
