@@ -21,14 +21,15 @@ register_matplotlib_converters()
 
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
-out_dir = sm.root_data_out+"Images/"
+out_dir = sm.root_data_out+"figures\\SmartSea\\"
 fig_factor = 2.0
 fig_size = (10*fig_factor,5*fig_factor)
 analyze_salt_content = True
 analyze_heat_content = True
-analyze_salt_profiles = True
-analyze_salt_trends = True
+analyze_salt_profiles = False
+analyze_salt_trends = False
 plot_trends = True
+plot_cloud = True
 
 create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
@@ -109,8 +110,8 @@ class ValueSet():
 if analyze_salt_content:
     variable = 'sea_water_absolute_salinity'
 #    in_dir ='D:\\Data\\SmartSeaModeling\\'
-    in_dir = sm.root_data_in+'derived_data/'
-    name_format = 'reserve_salinity_(.*)_total.nc'
+    in_dir = sm.root_data_in+'derived_data\\figure_data\\'
+    name_format = 'reserve_salinity_(.*)_total\.nc'
     files = os.listdir(in_dir)
     dat={}
     for f in files:
@@ -157,7 +158,7 @@ gathered_profile_trends = ValueSet()
 if analyze_heat_content:
     variable = 'thermal_energy'
 #    in_dir ='D:\\Data\\SmartSeaModeling\\'
-    in_dir = sm.root_data_in+'derived_data/'
+    in_dir = sm.root_data_in+'derived_data\\'
     name_format = 'reserve_votemper_(.*).nc'
     files = os.listdir(in_dir)
     min_depth = 80.0
@@ -184,7 +185,7 @@ if analyze_heat_content:
                 times = times[tmp_filter]
                 values = values[tmp_filter]
                 time_frame = times[0].strftime("%B")
-            if(type(month_of_interest) == list): #crop data for specific months
+            elif(type(month_of_interest) == list): #crop data for specific months
                 tmp_filter = [ x.month in month_of_interest for x in times]
                 times = times[tmp_filter]
                 values = values[tmp_filter]
@@ -263,7 +264,7 @@ if analyze_salt_profiles:
     for point in points:
         for depth_in in all_depths:
 #            in_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
-            in_dir = sm.root_data_in+'derived_data/extracted_profiles/'
+            in_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
             name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
             files = os.listdir(in_dir)
             files = [i for i in files if re.match(name_format,i)]
@@ -325,7 +326,7 @@ if analyze_salt_profiles:
             if(fixed_axis):
                 plt.ylim(fixed_axis[0],fixed_axis[1])
             print("saving",depth,point)
-            plt.savefig(out_dir+"profiles/"+\
+            plt.savefig(out_dir+"Profiles\\"+\
                         "{}_profile_{}_{:0.1f}m_{}-{}.png".format(\
                         variable_name,\
                         point,\
