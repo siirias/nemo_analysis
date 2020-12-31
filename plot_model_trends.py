@@ -16,25 +16,47 @@ import re
 import netCDF4
 import smartseahelper
 from netCDF4 import Dataset
+import xarray as xr
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
 out_dir = sm.root_data_out+"figures\\SmartSea\\"
-fig_factor = 2.0
+fig_factor = 0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
-analyze_salt_content = True
-analyze_heat_content = True
-analyze_salt_profiles = False
+#analyze_salt_content = True
+#analyze_heat_content = True
+#content_types = {"analyze_salt_content":True, "analyze_heat_content":True}
+content_types = {"analyze_salt_content":True,\
+                 "analyze_heat_content":True}
+
+analyze_profiles = False
+profile_types = ["vosaline", "votemper"]
 analyze_salt_trends = False
-plot_trends = True
-plot_cloud = True
+
+plot_single_models = True
+plot_combinations = False
+
+
+plot_original = False
+plot_yearly_mean = True
+plot_smoothed = False
+plot_trends = False
+plot_cloud = False
+plot_scatter = True
+show_grid = True
+
+plot_shift = dt.timedelta(5*365)  # how much decadal errorbars are shifted to middle of the decade
+extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (too much)
 
 create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
+
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+
 def make_ensemble(data_sets, ensemble_string, param = 'value'):
     keys = [x for x in data_sets.keys() if ensemble_string in x]    
     ensemble_vals = np.mean([data_sets[x][param] for x in keys],0)
@@ -51,6 +73,14 @@ def set_style(set_name,alpha=1.0):
     if('005' in set_name or 'RCP85' in set_name):
         scenario = "rcp85"
     model_type = re.search("^[A-Z]*",set_name).group()
+    #execeptions for mean values:
+    if(set_name.upper() == "RCP85"):
+        model_type = "RCP85"
+    if(set_name.upper() == "RCP45"):
+        model_type = "RCP45"
+    if(set_name.upper() == "Control"):
+        model_type = "Control"
+
     colors = {
         'A':'b',
         'B':'r',
@@ -59,7 +89,10 @@ def set_style(set_name,alpha=1.0):
         'h':'k',
         'RCP':'r',
         'HISTORY':'b',
-        'REANALYSIS':'k'
+        'REANALYSIS':'k',
+        'RCP45':'b',
+        'RCP85':'r',
+        'Control':'p'
     }
     scen_styles = {
         'history':'--',
@@ -106,259 +139,374 @@ class ValueSet():
         return np.max(self.give_values(point,depth,filter_str))
     def min(self,point,depth,filter_str=".*"):
         return np.min(self.give_values(point,depth,filter_str))
-        
-if analyze_salt_content:
-    variable = 'sea_water_absolute_salinity'
-#    in_dir ='D:\\Data\\SmartSeaModeling\\'
-    in_dir = sm.root_data_in+'derived_data\\figure_data\\'
-    name_format = 'reserve_salinity_(.*)_total\.nc'
-    files = os.listdir(in_dir)
-    dat={}
-    for f in files:
-        
-        set_name=re.search(name_format,f)
-        if(set_name):
-            set_name = set_name.groups()[0]
-#        dat[set_name]=pd.read_csv(in_dir+f,\
-#                             parse_dates=[0])
-            print(set_name)
-            D = Dataset(in_dir+f)
-            values = D['sea_water_absolute_salinity']
-            times = D['time']
-            times = netCDF4.num2date(times[:],times.units)
-            dat[set_name] = pd.DataFrame({'time':times, 'value':values})
-    plt.figure(figsize=fig_size)
-    plt.title("Total amount of salt in GoB (GT)")
-    for s in dat:
-        d=dat[s]
-        d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-        plt.plot(d['time'],d['value'], label='_nolegend_', zorder=11,**set_style(s,0.2))
-    for s in dat:
-        d=dat[s]
-        d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-        if(len(d)>1):
-            smooth_window = 12 #yearly 
-            smoothed = d['value'].ewm(span = smooth_window,min_periods=smooth_window).mean()
-            fitting_time = mp.dates.date2num(d['time'])
-            fitting = np.polyfit(fitting_time,d['value'],1)
-            print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
-            label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
-            plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
-            if(plot_trends):
-#                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
-                plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
-    plt.legend()
-    plt.savefig(out_dir+"total_salt_{}-{}.png".format(\
-                period['min'].year,period['max'].year))
-    print("saved the figure!",out_dir)
-gathered_profile_trends = ValueSet()
 
-
-# ANALYSE HEAT CONTENT
-if analyze_heat_content:
-    variable = 'thermal_energy'
-#    in_dir ='D:\\Data\\SmartSeaModeling\\'
-    in_dir = sm.root_data_in+'derived_data\\'
-    name_format = 'reserve_votemper_(.*).nc'
-    files = os.listdir(in_dir)
-    min_depth = 80.0
-    max_depth = 10000.0
-    month_of_interest = 6
-    dat={}
-    for f in files:
-        set_name=re.search(name_format,f)
-        if(set_name):
-            set_name = set_name.groups()[0]
-#        dat[set_name]=pd.read_csv(in_dir+f,\
-#                             parse_dates=[0])
-            print(set_name)
-            D = Dataset(in_dir+f)
-            values = D['thermal_energy']
-            depths = D['depth']
-            values = np.sum(values[:,\
-                    (depths[:]>min_depth)&(depths[:]<max_depth)]\
-                    ,1)  # as files have per depth
-            times = D['time']
-            times = netCDF4.num2date(times[:],times.units)
-            if(type(month_of_interest) == int): #crop data for specific month
-                tmp_filter = [ x.month == month_of_interest for x in times]
-                times = times[tmp_filter]
-                values = values[tmp_filter]
-                time_frame = times[0].strftime("%B")
-            elif(type(month_of_interest) == list): #crop data for specific months
-                tmp_filter = [ x.month in month_of_interest for x in times]
-                times = times[tmp_filter]
-                values = values[tmp_filter]
-                time_frame = times[0].strftime("%B")+", "
-                time_frame = ", ".join([t.strftime("%B") \
-                                for t in times[0:len(month_of_interest)]])
-            else:
-                time_frame = "full year"
-            dat[set_name] = pd.DataFrame({'time':times, 'value':values})
-    plt.figure(figsize=fig_size)
-    plt.title("Total heat energy (J), depths {}-{} m, {}".format(\
-                                  min_depth, max_depth,\
-                                  time_frame))
-    for s in dat:
-        d=dat[s]
-        d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-        plt.plot(d['time'],d['value'], label='_nolegend_', zorder=11,**set_style(s,0.2))
-    for s in dat:
-        d=dat[s]
-        d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-        if(len(d)>1):
-            smooth_window = 12 #yearly 
-            smoothed = d['value'].ewm(span = smooth_window,min_periods=smooth_window).mean()
-            fitting_time = mp.dates.date2num(d['time'])
-            fitting = np.polyfit(fitting_time,d['value'],1)
-            print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
-            label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
-            plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
-            if(plot_trends):
-                plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
-    plt.legend()
-    plt.savefig(out_dir+"total_heat_{}-{}.png".format(\
-                period['min'].year,period['max'].year))
-    print("saved the figure!",out_dir)
-    if(create_ensembles):
-        ens_dat = {}
-        for ensemble in ['RCP45','RCP85','HISTORY']:
-            ens_dat[ensemble] = make_ensemble(dat,ensemble_filters[ensemble])
+#    
+#    
+# Plots conserning the whole Model area    
+#        
+#    
+#    
+    
+for a in content_types:        
+    if content_types[a]:
+        if(a == "analyze_salt_content"):
+            variable = 'sea_water_absolute_salinity'
+            name_format = 'reserve_salinity_(.*)_total\.nc'
+            title_text = "Total amount of salt in GoB (GT)"
+        elif(a == "analyze_heat_content"):
+            variable = 'heat_content'
+            name_format = 'reserve_potential_temperature_(.*)_total\.nc'            
+            title_text = "Total heat energy (J)"
+    #    data_dir ='D:\\Data\\SmartSeaModeling\\'
+        data_dir = sm.root_data_in+'derived_data\\figure_data\\'
+        files = os.listdir(data_dir)
+        dat={}
+        extra_shift = -extra_shift_step*3.0  # used to shift whisker plots a bit
+        for f in files:
+            
+            set_name=re.search(name_format,f)
+            if(set_name):
+                set_name = set_name.groups()[0]
+    #        dat[set_name]=pd.read_csv(data_dir+f,\
+    #                             parse_dates=[0])
+                D = xr.open_dataset(data_dir+f)
+                print(set_name)
+    #            D = Dataset(data_dir+f)
+                values =  np.array(D[variable])
+                times =  np.array(D['time'])
+                dat[set_name] = pd.DataFrame(list(zip(times,values)),\
+                                   columns=['time',variable])
+    #            times = D['time']
+    #            times = netCDF4.num2date(times[:],times.units)
+    #            dat[set_name] = pd.DataFrame({'time':times, 'value':values})
+    #            dat[set_name]=pd.read_csv(data_dir+f,\
+    #                                 parse_dates=[0])
+                dat[set_name] = dat[set_name].set_index('time')
+                D.close()
+                
         plt.figure(figsize=fig_size)
-        plt.title("Total heat energy (J), depths {}-{} m, {}".format(\
-                                      min_depth, max_depth,\
-                                      time_frame))
-        for s in ens_dat:
-            d=ens_dat[s]
-            d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-            plt.plot(d['time'],d['value'], label='_nolegend_', zorder=11,**set_style(s,0.2))
-        for s in ens_dat:
-            d=ens_dat[s]
-            d = d[(d['time']>period['min']) & (d['time']<period['max'])]
+        plt.title(title_text)
+        #calculate the means for History, RCP4.5 and RCP8.5
+        if(plot_combinations):
+            dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+            dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+            dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+            if(not plot_single_models): # remove the A,B,D thingies from the list
+                for i in list(dat.keys()):
+                    if(i.startswith('A') or i.startswith('B') or i.startswith('D')):
+                        dat.pop(i)
+        for s in dat:
+            d=dat[s]
+            d = d[(d.index>period['min']) & (d.index<period['max'])]
+            if(plot_original):
+                plt.plot(d.index,d[variable], label='_nolegend_', zorder=11,**set_style(s,0.2))
+        for s in dat:
+            d=dat[s]
+            d = d[(d.index>period['min']) & (d.index<period['max'])]
             if(len(d)>1):
                 smooth_window = 12 #yearly 
-                smoothed = d['value'].ewm(span = smooth_window,min_periods=smooth_window).mean()
-                fitting_time = mp.dates.date2num(d['time'])
-                fitting = np.polyfit(fitting_time,d['value'],1)
+                smoothed = d[variable].ewm(span = smooth_window,min_periods=smooth_window).mean()
+                fitting_time = mp.dates.date2num(d.index)
+                fitting = np.polyfit(fitting_time,d[variable],1)
                 print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
                 label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
-                plt.plot(d['time'],smoothed,label=label_text, zorder=15,**set_style(s))
+                if(plot_smoothed):
+                    plt.plot(d.index,smoothed,label=label_text, zorder=15,**set_style(s))
+                    label_text = None # to prevent plotting the label more than once
                 if(plot_trends):
-                    plt.plot(d['time'],fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+    #                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
+                    plt.plot(d.index,fitting[0]*fitting_time+fitting[1],label=label_text, zorder=15,**set_style(s,0.4))
+                    label_text = None # to prevent plotting the label more than once
+                s_cloud = set_style(s)
+                s_cloud['alpha'] = 0.1
+                s_cloud.pop('marker') # fill_betwen doesn't revognize marker, so this key must be ejected.
+                d_tmp = d.groupby(pd.Grouper(freq='1AS')).mean()
+                mean = d_tmp.groupby(pd.Grouper(freq='10AS')).mean()
+                median = d_tmp.groupby(pd.Grouper(freq='10AS')).median()
+                std = d_tmp.groupby(pd.Grouper(freq='10AS')).std()
+                maximum = d_tmp.groupby(pd.Grouper(freq='10AS')).max()
+                minimum = d_tmp.groupby(pd.Grouper(freq='10AS')).min()
+                quant_min = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.75)
+                quant_max = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.25)
+
+                print("Mean std for {}: {}".format(s,std.mean()))
+
+                if(plot_scatter):
+                    plot_shift_plus = plot_shift + extra_shift
+                    scatter_style = set_style(s)
+                    scatter_style['marker'] = 'D'
+                    scatter_style['s'] = scatter_style['linewidth']*30
+                    scatter_style['linewidth'] = 0.0
+                    plt.scatter(median.index+plot_shift_plus,median[variable], \
+                                label=label_text, zorder=16,**scatter_style)
+                    label_text = None # to prevent plotting the label more than once
+                    scatter_style.pop('s')
+                    scatter_style['marker'] = ''
+                    scatter_style['linestyle'] = ' '
+                    scatter_style['elinewidth'] = 3
+#                    scatter_style['capsize'] = 5
+                    
+                    minmax = np.vstack((mean[variable]-quant_max[variable],\
+                                        quant_min[variable]- mean[variable]))
+                    plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                                 yerr = minmax,\
+                                label=label_text, zorder=16,**scatter_style)
+
+                    minmax = np.vstack((mean[variable]-minimum[variable],\
+                                        maximum[variable]- mean[variable]))
+                    scatter_style['elinewidth'] = 1
+                    scatter_style['capsize'] = 3
+                    plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                                 yerr = minmax,\
+                                label=label_text, zorder=16,**scatter_style)
+                    extra_shift += extra_shift_step
+
+                if(plot_cloud):
+                    plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**set_style(s))
+                    plt.fill_between(median.index+plot_shift,\
+                                     mean[variable]-std[variable],\
+                                     mean[variable]+std[variable],
+                                     **s_cloud)
+                    label_text = None # to prevent plotting the label more than once
+
+                if(plot_yearly_mean):
+                    mean_style = set_style(s)
+                    mean_style['alpha'] = 0.15
+                    plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
+                    label_text = None # to prevent plotting the label more than once
+                    
         plt.legend()
-            
-            
+        plt.xlim([period['min'],period['max']])
+        if(show_grid):
+            plt.grid('on')
+        extra = ""
+        if(plot_combinations):
+            extra+="comb"
+        plt.savefig(out_dir+"total_{}_{}-{}{}.png".format(\
+                    variable, period['min'].year,period['max'].year, extra))
+        print("saved the figure!",out_dir)
 gathered_profile_trends = ValueSet()
 
+#
 
-if analyze_salt_profiles:
+#
+# Plots conserning specific measurement points
+#
+#
+#
+
+
+if analyze_profiles:
 #    variable = 'votemper'
-    variable = 'vosaline'
-    all_depths = [0.0,50.0, 100.0, 2000.0] #depth, if under the bottom, the lowest with number is accepted.
-    points = ['F64', 'SR5', 'MS4', 'C3', 'US5B', 'F16', 'BO3', 'F3', 'F9', 'BO5']
-    fixed_axis= None #[2.0,9.0] #None or [min, max]
-    if(variable in ['vosaline']):
-        variable_name = "Salinity"
-    if(variable in ['votemper']):
-        variable_name = "Temperature"
-    for point in points:
-        for depth_in in all_depths:
-#            in_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
-            in_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
-            name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
-            files = os.listdir(in_dir)
-            files = [i for i in files if re.match(name_format,i)]
-            depth = 0.0  # default if no other defined
-            dat={}
-            for f in files:
-                set_name=re.search(name_format,f)
-                if(set_name):
-                    set_name = set_name.groups()[0]
-                    print(set_name)
-                    D = Dataset(in_dir+f)
-                    values = D[variable]
-                    times = D['date']
-                    times_orig = times[:]
-                    lat = float(D['latitude'].getValue())
-                    lon = float(D['longitude'].getValue())
-                    depths = D['deptht']
-                    max_depth = depths[values[0,:][values[0,:].mask == False]\
-                                       .shape[0]-1]
-                    depth = float(depths[np.abs((depths[:]-depth_in)).argmin()])
-                    depth = min(depth,max_depth)
-                    depth_layer = np.abs(np.array(depths)-depth).argmin()
-                    times = netCDF4.num2date(times[:],times.units)
-                    dat[set_name] = pd.DataFrame({'time':times,\
-                                   'value':values[:,depth_layer],\
-                                   'lat':lat,
-                                   'lon':lon})
-            plt.figure(figsize=fig_size)
-            plt.title("{} on {} depth {:0.1f} m (Max Depth {:0.0f} m)"\
-                          .format(variable_name, point,depth,max_depth))
-            for s in dat:
-                d=dat[s]
-                d = d[(d['time']>period['min']) & (d['time']<period['max'])]
-                if(len(d)>0):
-                    plt.plot(d['time'],d['value'], label='_nolegend_',\
-                                     zorder=11,**set_style(s,0.2))
-            
-                    smooth_window = 12*3 #yearly 
-                    smoothed = d['value'].ewm(span = smooth_window,\
-                                    min_periods=smooth_window).mean()
-                    fitting_time = mp.dates.date2num(d['time'])
-                    fitting = np.polyfit(fitting_time,d['value'],1)
-                    print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
-                    label_text = "{}:{:0.3f} u/dec".format(s,fitting[0]*3651.5)
-                    plt.plot(d['time'],smoothed,label=label_text, \
-                                 zorder=15,**set_style(s))
-                    gathered_profile_trends.add(\
+#    variable = 'vosaline'
+    for variable in profile_types:
+    #    all_depths = [0.0,50.0, 100.0, 2000.0] #depth, if under the bottom, the lowest with number is accepted.
+        all_depths = [0.0,'bottom_sample'] #depth, if under the bottom, the lowest with number is accepted.
+    #    points = ['F64', 'SR5', 'MS4', 'C3', 'US5B', 'F16', 'BO3', 'F3', 'F9', 'BO5']
+        points = ['F64', 'SR5', 'US5B', 'BO3']
+        bottom_sample = {'F64':245.0, 'SR5':110.0, 'US5B':120.0, 'BO3':100.0}
+        fixed_axis= None #[2.0,9.0] #None or [min, max]
+        if(variable in ['vosaline']):
+            variable_name = "Salinity"
+        if(variable in ['votemper']):
+            variable_name = "Temperature"
+        for point in points:
+            for depth_in_list in all_depths:
+    #            data_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
+                data_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
+                name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
+                files = os.listdir(data_dir)
+                files = [i for i in files if re.match(name_format,i)]
+                depth = 0.0  # default if no other defined
+                dat={}
+                if(depth_in_list == 'bottom_sample'):
+                    depth_in = bottom_sample[point]
+                else:
+                    depth_in = depth_in_list
+                for f in files:
+                    set_name=re.search(name_format,f)
+                    if(set_name):
+                        set_name = set_name.groups()[0]
+                        print(set_name)
+                        D = Dataset(data_dir+f)
+                        values = D[variable]
+                        times = D['date']
+                        times_orig = times[:]
+                        lat = float(D['latitude'].getValue())
+                        lon = float(D['longitude'].getValue())
+                        depths = D['deptht']
+                        max_depth = depths[values[0,:][values[0,:].mask == False]\
+                                           .shape[0]-1]
+                        depth = float(depths[np.abs((depths[:]-depth_in)).argmin()])
+                        depth = min(depth,max_depth)
+                        depth_layer = np.abs(np.array(depths)-depth).argmin()
+                        times = netCDF4.num2date(times[:],times.units)
+                        dat[set_name] = pd.DataFrame({'time':times,\
+                                       variable:values[:,depth_layer],\
+                                       'lat':lat,
+                                       'lon':lon})
+                        dat[set_name] = dat[set_name].set_index('time')
+
+                #calculate the means for History, RCP4.5 and RCP8.5
+                if(plot_combinations):
+                    dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+                    dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+                    dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+                    if(not plot_single_models): # remove the A,B,D thingies from the list
+                        for i in list(dat.keys()):
+                            if(i.startswith('A') or i.startswith('B') or i.startswith('D')):
+                                dat.pop(i)
+
+                
+                extra_shift = -extra_shift_step*3.0  # used to shift whisker plots a bit
+                plt.figure(figsize=fig_size)
+                plt.title("{} on {} depth {:0.1f} m (Max Depth {:0.0f} m)"\
+                              .format(variable_name, point,depth,max_depth))
+                for s in dat:
+                    d=dat[s]
+                    d = d[(d.index>period['min']) & (d.index<period['max'])]
+                    if(len(d)>0):
+                        smooth_window = 12*3 #yearly 
+                        smoothed = d[variable].ewm(span = smooth_window,\
+                                        min_periods=smooth_window).mean()
+                        fitting_time = mp.dates.date2num(d.index)
+                        fitting = np.polyfit(fitting_time,d[variable],1)
+                        print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
+                        label_text = "{}:{:0.3f} u/dec".format(s,fitting[0]*3651.5)
+                        if(plot_original):
+                            plt.plot(d.index,d[variable], label='_nolegend_',\
+                                             zorder=11,**set_style(s,0.2))
+                        if(plot_smoothed):
+                            plt.plot(d.index,smoothed,label=label_text, \
+                                         zorder=15,**set_style(s))
+                            label_text = None
+                        gathered_profile_trends.add(\
+                                point,\
+                                d['lat'].iloc[0],\
+                                d['lon'].iloc[0],\
+                                "{:0.1f}".format(depth),\
+                                s,\
+                                fitting[0]*365.15)
+                        if(plot_trends):
+                            plt.plot(d.index,\
+                                     fitting[0]*fitting_time+fitting[1],\
+                                     label=label_text, zorder=15,**set_style(s,0.4))
+                            label_text = None
+                    ## Handle the yearly, decadal, etc.
+                        s_cloud = set_style(s)
+                        s_cloud['alpha'] = 0.1
+                        s_cloud.pop('marker') # fill_betwen doesn't revognize marker, so this key must be ejected.
+                        d_tmp = d.groupby(pd.Grouper(freq='1AS')).mean()
+                        mean = d_tmp.groupby(pd.Grouper(freq='10AS')).mean()
+                        median = d_tmp.groupby(pd.Grouper(freq='10AS')).median()
+                        std = d_tmp.groupby(pd.Grouper(freq='10AS')).std()
+                        maximum = d_tmp.groupby(pd.Grouper(freq='10AS')).max()
+                        minimum = d_tmp.groupby(pd.Grouper(freq='10AS')).min()
+                        quant_min = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.75)
+                        quant_max = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.25)
+        
+                        print("Mean std for {}: {}".format(s,std.mean()))
+        
+                        if(plot_scatter):
+                            plot_shift_plus = plot_shift + extra_shift
+                            scatter_style = set_style(s)
+                            scatter_style['marker'] = 'D'
+                            scatter_style['s'] = scatter_style['linewidth']*30
+                            scatter_style['linewidth'] = 0.0
+                            plt.scatter(median.index+plot_shift_plus,median[variable], \
+                                        label=label_text, zorder=16,**scatter_style)
+                            label_text = None # to prevent plotting the label more than once
+                            scatter_style.pop('s')
+                            scatter_style['marker'] = ''
+                            scatter_style['linestyle'] = ' '
+                            scatter_style['elinewidth'] = 3
+        #                    scatter_style['capsize'] = 5
+                            
+                            minmax = np.vstack((mean[variable]-quant_max[variable],\
+                                                quant_min[variable]- mean[variable]))
+                            plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                                         yerr = minmax,\
+                                        label=label_text, zorder=16,**scatter_style)
+        
+                            minmax = np.vstack((mean[variable]-minimum[variable],\
+                                                maximum[variable]- mean[variable]))
+                            scatter_style['elinewidth'] = 1
+                            scatter_style['capsize'] = 3
+                            plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                                         yerr = minmax,\
+                                        label=label_text, zorder=16,**scatter_style)
+                            extra_shift += extra_shift_step
+        
+                        if(plot_cloud):
+                            plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**set_style(s))
+                            plt.fill_between(median.index+plot_shift,\
+                                             mean[variable]-std[variable],\
+                                             mean[variable]+std[variable],
+                                             **s_cloud)
+                            label_text = None # to prevent plotting the label more than once
+        
+                        if(plot_yearly_mean):
+                            mean_style = set_style(s)
+                            mean_style['alpha'] = 0.15
+                            plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
+                            label_text = None # to prevent plotting the label more than once
+                        
+                        
+                plt.legend()
+                if(fixed_axis):
+                    plt.ylim(fixed_axis[0],fixed_axis[1])
+                plt.xlim([period['min'],period['max']])
+                if(show_grid):
+                    plt.grid('on')
+                print("saving",depth,point)
+                if(depth_in_list == "bottom_sample"):
+                    depth_str = "bottom"
+                else:
+                    depth_str = "{:.1f}m".format(depth)
+                extra = ""
+                if(plot_combinations):
+                    extra += "comb"
+                plt.savefig(out_dir+"Profiles\\"+\
+                            "{}_profile_{}_{}_{}-{}{}.png".format(\
+                            variable_name,\
                             point,\
-                            d['lat'].iloc[0],\
-                            d['lon'].iloc[0],\
-                            "{:0.1f}".format(depth),\
-                            s,\
-                            fitting[0]*365.15)
-                    if(plot_trends):
-                        plt.plot(d['time'],\
-                                 fitting[0]*fitting_time+fitting[1],\
-                                 label='_nolegend_', zorder=15,**set_style(s,0.4))
-            plt.legend()
-            if(fixed_axis):
-                plt.ylim(fixed_axis[0],fixed_axis[1])
-            print("saving",depth,point)
-            plt.savefig(out_dir+"Profiles\\"+\
-                        "{}_profile_{}_{:0.1f}m_{}-{}.png".format(\
-                        variable_name,\
-                        point,\
-                        depth,\
-                        period['min'].year,\
-                        period['max'].year))
-    #write trend analysis
-    trend_file_name = \
-        out_dir+'point_trends_{}.csv'.format(variable_name.lower())
-    with open(trend_file_name,'w') as out_f:
-        out_f.write("Point\tlat\tlon\tdepth\tscenario\tmean\tmin\tmax\n")
-        for fil,tag in zip(['.*1','.*2','.*5'],\
-                           ['HISTORY','RCP4.5','RCP8.5']):
-            for point in gathered_profile_trends.data.keys():
-                for depth in gathered_profile_trends.data[point].keys():
-                    try:
-                        depth_f=float(depth)
-                        ok = True
-                    except:
-                        ok = False
-                    if(ok):
-                        mean_val = gathered_profile_trends.mean(point,depth,fil)
-                        max_val = gathered_profile_trends.max(point,depth,fil)
-                        min_val = gathered_profile_trends.min(point,depth,fil)
-                        lat = gathered_profile_trends.data[point]['lat']
-                        lon = gathered_profile_trends.data[point]['lon']
-                        print(\
-                        "{}, {} m {}: mean {:0.3f} (min {:0.3f}, max {:0.3f})".format(\
-                         point, depth_f, tag,  mean_val, min_val, max_val))
-                        out_f.write("{}\t{:0.2f}\t{:0.2f}\t{}\t{}\t{:0.3f}\t{:0.03f}\t{:0.03f}\n".format(\
-                                  point, lat, lon, depth_f, tag, \
-                                  mean_val, min_val, max_val))
+                            depth_str,\
+                            period['min'].year,\
+                            period['max'].year, extra))
+        #write trend analysis
+        trend_file_name = \
+            out_dir+'point_trends_{}.csv'.format(variable_name.lower())
+        with open(trend_file_name,'w') as out_f:
+            out_f.write("Point\tlat\tlon\tdepth\tscenario\tmean\tmin\tmax\n")
+            for fil,tag in zip(['.*1','.*2','.*5'],\
+                               ['HISTORY','RCP4.5','RCP8.5']):
+                for point in gathered_profile_trends.data.keys():
+                    for depth in gathered_profile_trends.data[point].keys():
+                        try:
+                            depth_f=float(depth)
+                            ok = True
+                        except:
+                            ok = False
+                        if(ok):
+                            mean_val = gathered_profile_trends.mean(point,depth,fil)
+                            max_val = gathered_profile_trends.max(point,depth,fil)
+                            min_val = gathered_profile_trends.min(point,depth,fil)
+                            lat = gathered_profile_trends.data[point]['lat']
+                            lon = gathered_profile_trends.data[point]['lon']
+                            print(\
+                            "{}, {} m {}: mean {:0.3f} (min {:0.3f}, max {:0.3f})".format(\
+                             point, depth_f, tag,  mean_val, min_val, max_val))
+                            out_f.write("{}\t{:0.2f}\t{:0.2f}\t{}\t{}\t{:0.3f}\t{:0.03f}\t{:0.03f}\n".format(\
+                                      point, lat, lon, depth_f, tag, \
+                                      mean_val, min_val, max_val))
+
+#
+#
+#The trend plots 
+#
+#
+#
+
 if analyze_salt_trends:
     #open just saved file as pandas, and do some plotting
     scenarios = ['HISTORY','RCP4.5','RCP8.5']
