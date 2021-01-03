@@ -8,6 +8,7 @@ import datetime as dt
 import calendar
 import numpy as np
 import os
+import re
 class smh:
     # 1:d/h 2:startdate 3:enddate 4:grid type (T)
     #date format YYYYMMDD .strftime("%Y%m%d")
@@ -124,23 +125,90 @@ class smh:
         return values
     def get_bottom(self, grid):
         # grid is supposed to be masked array, Time, D,Lat,Lon
+        # or D,lat, lon
         # The idea in this is to shifht the mask one layer up,
         # and find the values which are masked in one (and only one) of
         # these masks. 
         full_shape = grid.shape
-        bottom_layers = np.zeros((  full_shape[0],\
-                                    full_shape[2],
-                                    full_shape[3]))
-        bottom_layers = np.ma.masked_array(bottom_layers,False)
-        mask_roll = np.roll(grid.mask,-1,1) # move mask values one up.
-        mask_roll[:,-1,:,:] = True  # And mark bottom most mask as True.
-                                   # This to get bottom values if there are no mask at end
-        grid.mask = ~(grid.mask ^ mask_roll)
-        bottom_layers = np.sum(grid,1)
-        values = np.array(np.sum(~grid.mask,1),bool)  # used to get the mask
+        dimensions = len(full_shape)
+        if(dimensions == 4): # case with time, D, lat, lon
+            bottom_layers = np.zeros((  full_shape[0],\
+                                        full_shape[2],
+                                        full_shape[3]))
+            bottom_layers = np.ma.masked_array(bottom_layers,False)
+            mask_roll = np.roll(grid.mask,-1,1) # move mask values one up.
+            mask_roll[:,-1,:,:] = True  # And mark bottom most mask as True.
+                                       # This to get bottom values if there are no mask at end
+            grid.mask = ~(grid.mask ^ mask_roll)
+            bottom_layers = np.sum(grid,1)
+            values = np.array(np.sum(~grid.mask,1),bool)  # used to get the mask
+        else: # case with D, lat, lon
+            bottom_layers = np.zeros((  full_shape[1],
+                                        full_shape[2]))
+            bottom_layers = np.ma.masked_array(bottom_layers,False)
+            mask_roll = np.roll(grid.mask,-1,0) # move mask values one up.
+            mask_roll[-1,:,:] = True  # And mark bottom most mask as True.
+                                       # This to get bottom values if there are no mask at end
+            grid.mask = ~(grid.mask ^ mask_roll)
+            bottom_layers = np.sum(grid,0)
+            values = np.array(np.sum(~grid.mask,0),bool)  # used to get the mask
+            
         bottom_layers.mask = ~values
         return bottom_layers
             
+    def set_style(self, set_name,alpha=1.0):
+        # returns a dictionary that cna be used to
+        # define plot style. COlor, linestyles, thickness,
+        # Based on the string given. Homogenizes plots when this
+        # is used.
+        scenario = ""
+        if( '001' in set_name or 'hindcast' or 'HISTORY' in set_name):
+            scenario = "history"
+        if('002' in set_name or 'RCP45' in set_name):
+            scenario = "rcp45"
+        if('005' in set_name or 'RCP85' in set_name):
+            scenario = "rcp85"
+        model_type = re.search("^[A-Z]*",set_name).group()
+        #execeptions for mean values:
+        if(set_name.upper() == "RCP85"):
+            model_type = "RCP85"
+        if(set_name.upper() == "RCP45"):
+            model_type = "RCP45"
+        if(set_name.upper() == "CONTROL"):
+            model_type = "Control"
+        if(set_name.upper() == "HINDCAST"):
+            model_type = "hindcast"
+    
+        colors = {
+            'A':'b',
+            'B':'r',
+            'C':'c',
+            'D':'g',
+            'h':'k',
+            'RCP':'r',
+            'HISTORY':'b',
+            'hindcast':'b',
+            'REANALYSIS':'k',
+            'RCP45':'b',
+            'RCP85':'r',
+            'Control':'m'
+        }
+        scen_styles = {
+            'history':'--',
+            'rcp45':'-',
+            'rcp85':'-'
+        }
+        line_width = 1.0
+        marker = ''
+        if(scenario == 'rcp85'):
+            line_width=2.0
+        print(set_name,scenario)
+        print(model_type,scenario)
+        return {'color':colors[model_type],
+                'linestyle':scen_styles[scenario],
+                'linewidth':line_width,
+                'alpha':alpha,
+                'marker':marker}
         
         
         

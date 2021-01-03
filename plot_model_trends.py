@@ -31,12 +31,12 @@ fig_size = (10*fig_factor,5*fig_factor)
 content_types = {"analyze_salt_content":True,\
                  "analyze_heat_content":True}
 
-analyze_profiles = False
+analyze_profiles = True
 profile_types = ["vosaline", "votemper"]
 analyze_salt_trends = False
 
-plot_single_models = True
-plot_combinations = False
+plot_single_models = False
+plot_combinations = True
 
 
 plot_original = False
@@ -53,9 +53,9 @@ extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (
 create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
-#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
 
 def make_ensemble(data_sets, ensemble_string, param = 'value'):
     keys = [x for x in data_sets.keys() if ensemble_string in x]    
@@ -64,51 +64,6 @@ def make_ensemble(data_sets, ensemble_string, param = 'value'):
     ensemble[param] = ensemble_vals
     return ensemble
 
-def set_style(set_name,alpha=1.0):
-    scenario = ""
-    if( '001' in set_name or 'hindcast' or 'HISTORY' in set_name):
-        scenario = "history"
-    if('002' in set_name or 'RCP45' in set_name):
-        scenario = "rcp45"
-    if('005' in set_name or 'RCP85' in set_name):
-        scenario = "rcp85"
-    model_type = re.search("^[A-Z]*",set_name).group()
-    #execeptions for mean values:
-    if(set_name.upper() == "RCP85"):
-        model_type = "RCP85"
-    if(set_name.upper() == "RCP45"):
-        model_type = "RCP45"
-    if(set_name.upper() == "Control"):
-        model_type = "Control"
-
-    colors = {
-        'A':'b',
-        'B':'r',
-        'C':'c',
-        'D':'g',
-        'h':'k',
-        'RCP':'r',
-        'HISTORY':'b',
-        'REANALYSIS':'k',
-        'RCP45':'b',
-        'RCP85':'r',
-        'Control':'p'
-    }
-    scen_styles = {
-        'history':'--',
-        'rcp45':'-',
-        'rcp85':'-'
-    }
-    line_width = 1.0
-    marker = ''
-    if(scenario == 'rcp85'):
-        line_width=2.0
-    print(set_name,scenario)
-    return {'color':colors[model_type],
-            'linestyle':scen_styles[scenario],
-            'linewidth':line_width,
-            'alpha':alpha,
-            'marker':marker}
 
 class ValueSet():
     def __init__(self):
@@ -199,7 +154,7 @@ for a in content_types:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
             if(plot_original):
-                plt.plot(d.index,d[variable], label='_nolegend_', zorder=11,**set_style(s,0.2))
+                plt.plot(d.index,d[variable], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
         for s in dat:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
@@ -211,13 +166,13 @@ for a in content_types:
                 print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
                 label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
                 if(plot_smoothed):
-                    plt.plot(d.index,smoothed,label=label_text, zorder=15,**set_style(s))
+                    plt.plot(d.index,smoothed,label=label_text, zorder=15,**sm.set_style(s))
                     label_text = None # to prevent plotting the label more than once
                 if(plot_trends):
     #                plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**set_style(s,0.4))
-                    plt.plot(d.index,fitting[0]*fitting_time+fitting[1],label=label_text, zorder=15,**set_style(s,0.4))
+                    plt.plot(d.index,fitting[0]*fitting_time+fitting[1],label=label_text, zorder=15,**sm.set_style(s,0.4))
                     label_text = None # to prevent plotting the label more than once
-                s_cloud = set_style(s)
+                s_cloud = sm.set_style(s)
                 s_cloud['alpha'] = 0.1
                 s_cloud.pop('marker') # fill_betwen doesn't revognize marker, so this key must be ejected.
                 d_tmp = d.groupby(pd.Grouper(freq='1AS')).mean()
@@ -233,7 +188,7 @@ for a in content_types:
 
                 if(plot_scatter):
                     plot_shift_plus = plot_shift + extra_shift
-                    scatter_style = set_style(s)
+                    scatter_style = sm.set_style(s)
                     scatter_style['marker'] = 'D'
                     scatter_style['s'] = scatter_style['linewidth']*30
                     scatter_style['linewidth'] = 0.0
@@ -262,7 +217,7 @@ for a in content_types:
                     extra_shift += extra_shift_step
 
                 if(plot_cloud):
-                    plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**set_style(s))
+                    plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**sm.set_style(s))
                     plt.fill_between(median.index+plot_shift,\
                                      mean[variable]-std[variable],\
                                      mean[variable]+std[variable],
@@ -270,7 +225,7 @@ for a in content_types:
                     label_text = None # to prevent plotting the label more than once
 
                 if(plot_yearly_mean):
-                    mean_style = set_style(s)
+                    mean_style = sm.set_style(s)
                     mean_style['alpha'] = 0.15
                     plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
                     label_text = None # to prevent plotting the label more than once
@@ -375,10 +330,10 @@ if analyze_profiles:
                         label_text = "{}:{:0.3f} u/dec".format(s,fitting[0]*3651.5)
                         if(plot_original):
                             plt.plot(d.index,d[variable], label='_nolegend_',\
-                                             zorder=11,**set_style(s,0.2))
+                                             zorder=11,**sm.set_style(s,0.2))
                         if(plot_smoothed):
                             plt.plot(d.index,smoothed,label=label_text, \
-                                         zorder=15,**set_style(s))
+                                         zorder=15,**sm.set_style(s))
                             label_text = None
                         gathered_profile_trends.add(\
                                 point,\
@@ -390,10 +345,10 @@ if analyze_profiles:
                         if(plot_trends):
                             plt.plot(d.index,\
                                      fitting[0]*fitting_time+fitting[1],\
-                                     label=label_text, zorder=15,**set_style(s,0.4))
+                                     label=label_text, zorder=15,**sm.set_style(s,0.4))
                             label_text = None
                     ## Handle the yearly, decadal, etc.
-                        s_cloud = set_style(s)
+                        s_cloud = sm.set_style(s)
                         s_cloud['alpha'] = 0.1
                         s_cloud.pop('marker') # fill_betwen doesn't revognize marker, so this key must be ejected.
                         d_tmp = d.groupby(pd.Grouper(freq='1AS')).mean()
@@ -409,7 +364,7 @@ if analyze_profiles:
         
                         if(plot_scatter):
                             plot_shift_plus = plot_shift + extra_shift
-                            scatter_style = set_style(s)
+                            scatter_style = sm.set_style(s)
                             scatter_style['marker'] = 'D'
                             scatter_style['s'] = scatter_style['linewidth']*30
                             scatter_style['linewidth'] = 0.0
@@ -438,7 +393,7 @@ if analyze_profiles:
                             extra_shift += extra_shift_step
         
                         if(plot_cloud):
-                            plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**set_style(s))
+                            plt.plot(median.index+plot_shift,median[variable], label=label_text, zorder=16,**sm.set_style(s))
                             plt.fill_between(median.index+plot_shift,\
                                              mean[variable]-std[variable],\
                                              mean[variable]+std[variable],
@@ -446,7 +401,7 @@ if analyze_profiles:
                             label_text = None # to prevent plotting the label more than once
         
                         if(plot_yearly_mean):
-                            mean_style = set_style(s)
+                            mean_style = sm.set_style(s)
                             mean_style['alpha'] = 0.15
                             plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
                             label_text = None # to prevent plotting the label more than once

@@ -26,7 +26,7 @@ data_dir = "E:\\SmartSea\\climatologies\\"
 bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 fig_dpi = 300
-
+close_figures = False  # set to True to keep figures open.
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
 mod_min_lon = 16.40257
@@ -39,7 +39,8 @@ all_variables = {"Temperature_monthly":"votemper",\
                  "Salinity_monthly":"vosaline",
                  "SSS":"SSS",
                  "SBS":"SBS",
-                 "SST":"SST"
+                 "SST":"SST",
+                 "SBT":"votemper"
                  }
 
 color_maps = {"Temperature_monthly":cmo.cm.thermal,\
@@ -48,17 +49,22 @@ color_maps = {"Temperature_monthly":cmo.cm.thermal,\
              "SBS":cmo.cm.haline,
              "SST":cmo.cm.thermal
               }
+
+shown_units = {"SSS":"-",
+               "SBS":"-",
+               "SST":"°C",
+               "SBT":"°C"}
 #serie_types = ["SBS_2vs1_diff", "SBS_5vs1_diff", "SBS_5vs2_diff"]
 #serie_types = [ "SBS_2vs1_diff", "SBS_5vs2_diff","SSS_2vs1_diff", "SSS_5vs1_diff", "SSS_5vs2_diff"]
 serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
 serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
 serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
-serie_types = [ "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
-serie_types = [ "SSS_1", "SBS_1", "SST_1", "SST_2", "SST_5"]
+serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
 
-serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
-serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
+#serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
+#serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 #serie_types = [ "SBS_1vsABD1_diff_test"]
+serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -69,7 +75,8 @@ plot_yearly_average = True
 plot_daily_figures = False
 comparison = True   # This one is set depending on do 
                     # the setup give name for another dataset
-comparison_climatology = 'TSO50'  # None, 'BNSC', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+comparison_climatology = 'SDC'  # None, 'BNSC', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+#comparison_climatology = None
 
 the_proj = ccrs.PlateCarree()
 # read configuration from a file.
@@ -157,6 +164,10 @@ for serie_type in serie_types:
                 plot_daily_figures = False
                 data0 = xr.open_dataset(measurement_dir+'BNSC_BothnianSea_inter20062015_TS.nc')
                 data = interp_for_climatology(data,data0)
+                all_vars_tmp = list(data.keys())
+                all_vars_tmp.remove(var)
+                data = data.drop_vars(all_vars_tmp)
+
                 set_name0 = 'BNSC'
                 file0 = 'BNSC'
                 if(var == 'SST'):
@@ -165,26 +176,28 @@ for serie_type in serie_types:
                     var0 = 'salinity_oan'
                 if(var == 'SBS'):
                     var0 = 'salinity_oan'
-            if(comparison_climatology == 'SDC'):
+            elif(comparison_climatology == 'SDC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
-                data0 = xr.open_dataset(measurement_dir+'SDC_BAL_CLIM_T_1955_2014_00625_m.nc')
-                data = interp_for_climatology(data,data0)
                 set_name0 = 'SDC'
                 file0 = 'SDC'
                 if(var == 'SST'):
                     var0 = 'ITS-90 water temperature'
+                    data0 = xr.open_dataset(measurement_dir+'SDC_BAL_CLIM_T_1955_2014_00625_m.nc')
                 if(var == 'SSS'):
                     var0 = 'Water body salinity'
-                    data0.close()
                     data0 = xr.open_dataset(measurement_dir+\
                             'SDC_BAL_CLIM_S_1955_2014_00625_m.nc')
                 if(var == 'SBS'):
                     var0 = 'Water body salinity'
-                    data0.close()
                     data0 = xr.open_dataset(measurement_dir+\
                             'SDC_BAL_CLIM_S_1955_2014_00625_m.nc')
-            if(comparison_climatology == 'TSO50'):
+                all_vars_tmp = list(data0.keys())
+                all_vars_tmp.remove(var0)
+                data0 = data0.drop_vars(all_vars_tmp)
+                data0 = data0.groupby('time.month').mean()
+                data = interp_for_climatology(data,data0)
+            elif(comparison_climatology == 'TSO50'):
                 plot_yearly_average = True
                 plot_daily_figures = False
                 data0 = xr.open_dataset(measurement_dir+'tso50.nc')
@@ -211,12 +224,20 @@ for serie_type in serie_types:
             pass
         #first plot the yearly average:
         if(plot_yearly_average):
-            day_filters = {
-                    "Year":slice(0,None),
-                    "DJF":[slice(0,58),slice(337,368)],
-                    "MAM":slice(59,151),
-                    "JJA":slice(152,244),
-                    "SON":slice(245,336)}
+            if(data[var].shape[0] == 12): # this is monthly values
+                day_filters = {
+                        "Year":slice(0,None),
+                        "DJF":[slice(0,2),slice(11,None)],
+                        "MAM":slice(2,5),
+                        "JJA":slice(5,8),
+                        "SON":slice(8,11)}
+            else: # let's assume daily values
+                day_filters = {
+                        "Year":slice(0,None),
+                        "DJF":[slice(0,58),slice(337,368)],
+                        "MAM":slice(59,151),
+                        "JJA":slice(152,244),
+                        "SON":slice(245,336)}
             day_filters0 = day_filters.copy() 
             for i in day_filters:
                 fig = create_main_map(the_proj)
@@ -229,7 +250,7 @@ for serie_type in serie_types:
                     lat = np.array(data['lat'])
                     lon = np.array(data['lon'])
                     d0_dat = data0[var0][:,0,:,:]
-                    if(var == 'SBS'): # have to gather bottom layer
+                    if(var == 'SBS' or var == 'SBT'): # have to gather bottom layer
                         d0_dat = smh.get_bottom(None,\
                                 np.ma.array(data0[var0],\
                                 mask = np.isnan(data0[var0])))
@@ -254,17 +275,44 @@ for serie_type in serie_types:
                 if(not comparison):
                     d0 = np.zeros(d.shape)
                 #d = np.ones(d.shape)
-                plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
+                if(len(d.shape)==3): # The data has depth included still
+                    if(var_name == 'SBT' or var_name == 'SBS'):
+                        dflat = smh.get_bottom(None,\
+                                np.ma.array(d,\
+                                mask = d == 0.0))
+                    else:
+                        dflat = d[0,:,:]  # surface layer
+                else:
+                    dflat = d
+                if(len(d0.shape)==3): # The data has depth included still
+                    if(var_name == 'SBT' or var_name == 'SBS'):
+                        d0flat = smh.get_bottom(None,\
+                                np.ma.array(d0,\
+                                mask = np.isnan(d0)))
+                    else:
+                        d0flat = d0[0,:,:]  # surface layer
+                else:
+                     d0flat = d0
+                        
+                plt.pcolor(lon,lat,dflat-d0flat,transform = the_proj, cmap = color_map, \
                            vmin = var_lims[0], vmax = var_lims[1])
                 cb=plt.colorbar()
-                cb.set_label('Difference')
-                plt.title("{} Diff, {} \n {}-{}".format(var_name,i,file,file0))
-                filename = "{}_{}vs{}_{}.png".format(var,set_name,set_name0,i)
+                if(comparison):
+                    cb.set_label('Difference ({})'.format(shown_units[var_name]))
+                else:
+                    cb.set_label('{} ({})'.format(var_name, shown_units[var_name]))
+                if(comparison):
+                    plt.title("{} Diff, {} \n {}-{}".format(var_name,i,file,file0))
+                    filename = "{}_{}vs{}_{}.png".format(var_name,set_name,set_name0,i)
+                else:
+                    plt.title("{}, {} \n {}".format(var_name,i,file))
+                    filename = "{}_{}_{}.png".format(var_name,set_name,i)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         
                 print("Saved: {}".format(output_dir+output_dir_plus_means+filename))
-                plt.close()
+                if(close_figures):
+                    plt.close()
         if(plot_daily_figures):
             for time_step in range(365):
                 #First let's plot the general map:
@@ -298,7 +346,8 @@ for serie_type in serie_types:
                 plt.savefig(output_dir+output_dir_plus+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
                 print("Saved: {}".format(output_dir+output_dir_plus+filename))
-                plt.close()
+                if(close_figures):
+                    plt.close()
         data.close()
         if(comparison):
             data0.close()
