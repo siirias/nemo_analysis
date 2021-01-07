@@ -282,7 +282,7 @@ output_dir_plus_means = "\\YearTemperature\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = 'RdBu_r'
-var_lims=[-4.0,4.0]
+var_lims=[-5.0,5.0]
 var_name = "SST"
 var = all_variables[var_name]
 
@@ -294,7 +294,7 @@ output_dir_plus_means = "\\YearTemperature\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = 'RdBu_r'
-var_lims=[-4.0,4.0]
+var_lims=[-5.0,5.0]
 var_name = "SBT"
 var = all_variables[var_name]
 
@@ -306,7 +306,7 @@ output_dir_plus_means = "\\YearSalinity\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = cmo.cm.diff
-var_lims=[-1.5,1.5]
+var_lims=[-0.5,0.5]
 var_name = "SBS"
 var = all_variables[var_name]
 
@@ -318,7 +318,7 @@ output_dir_plus_means = "\\YearSalinity\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = cmo.cm.diff
-var_lims=[-1.5,1.5]
+var_lims=[-0.5,0.5]
 var_name = "SSS"
 var = all_variables[var_name]
 

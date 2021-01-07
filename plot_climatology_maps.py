@@ -26,7 +26,8 @@ data_dir = "E:\\SmartSea\\climatologies\\"
 bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 fig_dpi = 300
-close_figures = False  # set to True to keep figures open.
+close_figures = True  # set to True to keep figures open.
+debug_plot_only_comparison = False
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
 mod_min_lon = 16.40257
@@ -65,6 +66,7 @@ serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
 #serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 #serie_types = [ "SBS_1vsABD1_diff_test"]
 serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
+#serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -170,25 +172,30 @@ for serie_type in serie_types:
 
                 set_name0 = 'BNSC'
                 file0 = 'BNSC'
-                if(var == 'SST'):
+                if(var_name == 'SST'):
                     var0 = 'temperature_oan'
-                if(var == 'SSS'):
+                if(var_name == 'SBT'):
+                    var0 = 'temperature_oan'
+                if(var_name == 'SSS'):
                     var0 = 'salinity_oan'
-                if(var == 'SBS'):
+                if(var_name == 'SBS'):
                     var0 = 'salinity_oan'
             elif(comparison_climatology == 'SDC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
                 set_name0 = 'SDC'
                 file0 = 'SDC'
-                if(var == 'SST'):
+                if(var_name == 'SST'):
                     var0 = 'ITS-90 water temperature'
                     data0 = xr.open_dataset(measurement_dir+'SDC_BAL_CLIM_T_1955_2014_00625_m.nc')
-                if(var == 'SSS'):
+                if(var_name == 'SBT'):
+                    var0 = 'ITS-90 water temperature'
+                    data0 = xr.open_dataset(measurement_dir+'SDC_BAL_CLIM_T_1955_2014_00625_m.nc')
+                if(var_name == 'SSS'):
                     var0 = 'Water body salinity'
                     data0 = xr.open_dataset(measurement_dir+\
                             'SDC_BAL_CLIM_S_1955_2014_00625_m.nc')
-                if(var == 'SBS'):
+                if(var_name == 'SBS'):
                     var0 = 'Water body salinity'
                     data0 = xr.open_dataset(measurement_dir+\
                             'SDC_BAL_CLIM_S_1955_2014_00625_m.nc')
@@ -206,11 +213,13 @@ for serie_type in serie_types:
                 data = interp_for_climatology(data,data0)
                 set_name0 = 'TSO50'
                 file0 = 'TSO50'
-                if(var == 'SST'):
+                if(var_name == 'SST'):
                     var0 = 'temperature'
-                if(var == 'SSS'):
+                if(var_name == 'SBT'):
+                    var0 = 'temperature'
+                if(var_name == 'SSS'):
                     var0 = 'salinity'
-                if(var == 'SBS'):
+                if(var_name == 'SBS'):
                     var0 = 'salinity'
                     
             else:
@@ -293,9 +302,12 @@ for serie_type in serie_types:
                         d0flat = d0[0,:,:]  # surface layer
                 else:
                      d0flat = d0
-                        
-                plt.pcolor(lon,lat,dflat-d0flat,transform = the_proj, cmap = color_map, \
-                           vmin = var_lims[0], vmax = var_lims[1])
+                if(debug_plot_only_comparison):
+                    plt.pcolor(lon,lat,d0flat,transform = the_proj, cmap = color_map, \
+                               vmin = var_lims[0], vmax = var_lims[1])
+                else:                        
+                    plt.pcolor(lon,lat,dflat-d0flat,transform = the_proj, cmap = color_map, \
+                               vmin = var_lims[0], vmax = var_lims[1])
                 cb=plt.colorbar()
                 if(comparison):
                     cb.set_label('Difference ({})'.format(shown_units[var_name]))
@@ -307,6 +319,9 @@ for serie_type in serie_types:
                 else:
                     plt.title("{}, {} \n {}".format(var_name,i,file))
                     filename = "{}_{}_{}.png".format(var_name,set_name,i)
+                if(debug_plot_only_comparison):
+                    plt.title("{}, {} \n {}".format(var_name,i,file0))
+                    filename = "{}_{}_{}.png".format(var_name,set_name0,i)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         
