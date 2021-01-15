@@ -20,22 +20,22 @@ output_dir = "D:\\Data\\Figures\\SmartSea\\Forcings\\"
 main_data_dir = "D:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
 
 fig_factor = 0.8  #1.5
-#fig_size = (10*fig_factor,5*fig_factor)
-fig_size = (10*fig_factor,7*fig_factor)
+fig_size = (10*fig_factor,5*fig_factor)
+#fig_size = (10*fig_factor,7*fig_factor)
 fig_dpi = 300
 analyze_inflow = True
 analyze_atmosphere = True
 analyze_boundary = False
 
-plot_single_models = True
-plot_combinations = False
+plot_single_models = False
+plot_combinations = True
 
-plot_trends = False
+plot_trends = True
 plot_smoothed = False
 plot_yearly_mean = True
 plot_original = False
-plot_cloud = True
-plot_scatter = False
+plot_cloud = False
+plot_scatter = True
 show_grid = True
 fix_inflow_ylims = False # (100,350)# False
 show_trends_in_Legend = False
@@ -109,7 +109,7 @@ if analyze_inflow:
         print("{} change: {:.3} km^3/yr".format(s,fitting[0]*365.15))
         s_temp = s
         if(s == 'hindcast'):
-            s_temp = 'Reference'
+            s_temp = 'Hindcast'
         if(show_trends_in_Legend):
             label_text = "{}:{:0.3} km^3/yr".format(s_temp,fitting[0]*365.15)
         else:

@@ -27,7 +27,8 @@ projection='laea'
 data_dir= "D:\\Data\\SmartSeaModeling\\SharkExamples\\"
 output_dir = "D:\\Data\\Figures\\SmartSea\\"
 out_filename = "Shark_points.png"
-plot_area = [16.0, 26.0, 60.0, 66.0]
+draw_labels = True
+plot_area = [17.0, 26.0, 60.0, 66.0]
 center = [(plot_area[0]+plot_area[1])*0.5, (plot_area[2]+plot_area[3])*0.5]
 lat_steps = 1.0
 lon_steps = 1.0
@@ -50,10 +51,6 @@ def create_main_map(proj):
         ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',\
                                                 edgecolor='face', \
                                                 facecolor='#555560', alpha = 0.3))
-        if(type(proj) == ccrs.PlateCarree):
-            draw_labels = True
-        else:
-            draw_labels = True
         grid_proj = ccrs.PlateCarree()
         gl = ax.gridlines(crs=grid_proj, draw_labels=draw_labels,
                   linewidth=2, color='gray', alpha=0.1, linestyle='-')

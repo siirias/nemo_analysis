@@ -181,16 +181,16 @@ class smh:
     
         colors = {
             'A':'b',
-            'B':'r',
+            'B':'#ff8c00',
             'C':'c',
             'D':'g',
             'h':'k',
             'RCP':'r',
-            'HISTORY':'b',
-            'hindcast':'b',
+            'HISTORY':'#66CCEE',
+            'hindcast':'#66CCEE',
             'REANALYSIS':'k',
             'RCP45':'b',
-            'RCP85':'r',
+            'RCP85':'#ff8c00',
             'Control':'m'
         }
         scen_styles = {

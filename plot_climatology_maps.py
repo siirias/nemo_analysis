@@ -27,7 +27,7 @@ bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 fig_dpi = 300
 close_figures = True  # set to True to keep figures open.
-debug_plot_only_comparison = False
+debug_plot_only_comparison = True
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
 mod_min_lon = 16.40257
@@ -65,8 +65,8 @@ serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
 #serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
 #serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 #serie_types = [ "SBS_1vsABD1_diff_test"]
-serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
-#serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
+#serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
+serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -320,6 +320,7 @@ for serie_type in serie_types:
                     plt.title("{}, {} \n {}".format(var_name,i,file))
                     filename = "{}_{}_{}.png".format(var_name,set_name,i)
                 if(debug_plot_only_comparison):
+                    cb.set_label('{} ({})'.format(var_name, shown_units[var_name]))
                     plt.title("{}, {} \n {}".format(var_name,i,file0))
                     filename = "{}_{}_{}.png".format(var_name,set_name0,i)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\

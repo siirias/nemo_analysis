@@ -23,7 +23,7 @@ register_matplotlib_converters()
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
 out_dir = sm.root_data_out+"figures\\SmartSea\\"
-fig_factor = 0.8  #1.5
+fig_factor = 0.8 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
 #analyze_heat_content = True
@@ -53,9 +53,13 @@ extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (
 create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
+drop_hindcast = False
 period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+
+if(period['min'] >= dt.datetime(2006,1,1)):
+    drop_hindcast = True
 
 def make_ensemble(data_sets, ensemble_string, param = 'value'):
     keys = [x for x in data_sets.keys() if ensemble_string in x]    
@@ -118,14 +122,20 @@ for a in content_types:
         dat={}
         extra_shift = -extra_shift_step*3.0  # used to shift whisker plots a bit
         for f in files:
-            
+            skip_this = True
             set_name=re.search(name_format,f)
             if(set_name):
+                skip_this = False
                 set_name = set_name.groups()[0]
+                if(set_name == "REANALYSIS"):
+                    set_name = "Hindcast"
+                    if(drop_hindcast):
+                        skip_this = True
+            if(not skip_this):
     #        dat[set_name]=pd.read_csv(data_dir+f,\
     #                             parse_dates=[0])
                 D = xr.open_dataset(data_dir+f)
-                print(set_name)
+#                print(set_name)
     #            D = Dataset(data_dir+f)
                 values =  np.array(D[variable])
                 times =  np.array(D['time'])
@@ -237,9 +247,10 @@ for a in content_types:
         extra = ""
         if(plot_combinations):
             extra+="comb"
-        plt.savefig(out_dir+"total_{}_{}-{}{}.png".format(\
-                    variable, period['min'].year,period['max'].year, extra))
-        print("saved the figure!",out_dir)
+        out_filename = "total_{}_{}-{}{}.png".format(\
+                    variable, period['min'].year,period['max'].year, extra)
+        plt.savefig(out_dir+ out_filename)
+        print("saved figure: {} {}".format(out_dir, out_filename))
 gathered_profile_trends = ValueSet()
 
 #
@@ -280,9 +291,16 @@ if analyze_profiles:
                     depth_in = depth_in_list
                 for f in files:
                     set_name=re.search(name_format,f)
+                    skip_this = True
                     if(set_name):
+                        skip_this = False
                         set_name = set_name.groups()[0]
-                        print(set_name)
+                        if(set_name == "REANALYSIS"):
+                            set_name = "Hindcast"
+                            if(drop_hindcast):
+                                skip_this = True
+                    if(not skip_this):
+#                        print(set_name)
                         D = Dataset(data_dir+f)
                         values = D[variable]
                         times = D['date']
@@ -413,7 +431,7 @@ if analyze_profiles:
                 plt.xlim([period['min'],period['max']])
                 if(show_grid):
                     plt.grid('on')
-                print("saving",depth,point)
+#                print("saving",depth,point)
                 if(depth_in_list == "bottom_sample"):
                     depth_str = "bottom"
                 else:
@@ -421,13 +439,15 @@ if analyze_profiles:
                 extra = ""
                 if(plot_combinations):
                     extra += "comb"
-                plt.savefig(out_dir+"Profiles\\"+\
-                            "{}_profile_{}_{}_{}-{}{}.png".format(\
+                out_filename = "{}_profile_{}_{}_{}-{}{}.png".format(\
                             variable_name,\
                             point,\
                             depth_str,\
                             period['min'].year,\
-                            period['max'].year, extra))
+                            period['max'].year, extra)
+                
+                plt.savefig(out_dir+"Profiles\\"+ out_filename)
+                print("Saved: {} {}".format(out_dir+"Profiles\\",out_filename))
         #write trend analysis
         trend_file_name = \
             out_dir+'point_trends_{}.csv'.format(variable_name.lower())
@@ -488,6 +508,7 @@ if analyze_salt_trends:
             for point,lat,val in zip(d['Point'],d['lat'],d['mean']):
                 plt.text(lat,val,point)
             #plt.ylim(-0.02,0.04)
-            plt.savefig(out_dir+\
-                        "{}_trends_{}_{:0.1f}m.png".format(\
-                        variable_name, scenario, depth))
+            out_filename = "{}_trends_{}_{:0.1f}m.png".format(\
+                        variable_name, scenario, depth)
+            plt.savefig(out_dir+out_filename)
+            print("saved: {} {}".format(out_dir, out_filename))
