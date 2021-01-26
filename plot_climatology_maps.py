@@ -27,7 +27,7 @@ bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 fig_dpi = 300
 close_figures = True  # set to True to keep figures open.
-debug_plot_only_comparison = True
+debug_plot_only_comparison = False
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
 mod_min_lon = 16.40257
@@ -57,16 +57,21 @@ shown_units = {"SSS":"-",
                "SBT":"°C"}
 #serie_types = ["SBS_2vs1_diff", "SBS_5vs1_diff", "SBS_5vs2_diff"]
 #serie_types = [ "SBS_2vs1_diff", "SBS_5vs2_diff","SSS_2vs1_diff", "SSS_5vs1_diff", "SSS_5vs2_diff"]
-serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
-serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
-serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
-serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
+#serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
+#serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
+#serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
+#serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
+#serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
 
 #serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
 #serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 #serie_types = [ "SBS_1vsABD1_diff_test"]
 #serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
-serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test"]
+#serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test"]
+#serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
+#serie_types = [ "SBT_1vsABD1_diff_test"]
+#serie_types = [ "SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
+serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -77,7 +82,7 @@ plot_yearly_average = True
 plot_daily_figures = False
 comparison = True   # This one is set depending on do 
                     # the setup give name for another dataset
-comparison_climatology = 'SDC'  # None, 'BNSC', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
 #comparison_climatology = None
 
 the_proj = ccrs.PlateCarree()
@@ -161,7 +166,7 @@ for serie_type in serie_types:
         data = xr.open_dataset(data_dir+file)
         if(len(file0)>0):
             var0 = var  # change if comparing to measurements which have other names
-            if(comparison_climatology == 'BNSC'):
+            if(comparison_climatology == 'BNSC_old'):
                 plot_yearly_average = True
                 plot_daily_figures = False
                 data0 = xr.open_dataset(measurement_dir+'BNSC_BothnianSea_inter20062015_TS.nc')
@@ -180,6 +185,27 @@ for serie_type in serie_types:
                     var0 = 'salinity_oan'
                 if(var_name == 'SBS'):
                     var0 = 'salinity_oan'
+            elif(comparison_climatology == 'BNSC'):
+                plot_yearly_average = True
+                plot_daily_figures = False
+                set_name0 = 'BNSC'
+                file0 = 'BNSC'
+                if(var_name == 'SST'):
+                    var0 = 'temperature_oan'
+                    data0 = xr.open_dataset(measurement_dir+'BNSC__temperature__climatology__1976__2005.nc')
+                if(var_name == 'SBT'):
+                    var0 = 'temperature_oan'
+                    data0 = xr.open_dataset(measurement_dir+'BNSC__temperature__climatology__1976__2005.nc')
+                if(var_name == 'SSS'):
+                    var0 = 'salinity_oan'
+                    data0 = xr.open_dataset(measurement_dir+'BNSC__salinity__climatology__1976__2005.nc')
+                if(var_name == 'SBS'):
+                    var0 = 'salinity_oan'
+                    data0 = xr.open_dataset(measurement_dir+'BNSC__salinity__climatology__1976__2005.nc')
+                data = interp_for_climatology(data,data0)
+                all_vars_tmp = list(data.keys())
+                all_vars_tmp.remove(var)
+                data = data.drop_vars(all_vars_tmp)
             elif(comparison_climatology == 'SDC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
@@ -259,7 +285,7 @@ for serie_type in serie_types:
                     lat = np.array(data['lat'])
                     lon = np.array(data['lon'])
                     d0_dat = data0[var0][:,0,:,:]
-                    if(var == 'SBS' or var == 'SBT'): # have to gather bottom layer
+                    if(var_name == 'SBS' or var_name == 'SBT'): # have to gather bottom layer
                         d0_dat = smh.get_bottom(None,\
                                 np.ma.array(data0[var0],\
                                 mask = np.isnan(data0[var0])))
@@ -297,7 +323,7 @@ for serie_type in serie_types:
                     if(var_name == 'SBT' or var_name == 'SBS'):
                         d0flat = smh.get_bottom(None,\
                                 np.ma.array(d0,\
-                                mask = np.isnan(d0)))
+                                mask = d == 0.0))  #   np.isnan(d0)
                     else:
                         d0flat = d0[0,:,:]  # surface layer
                 else:

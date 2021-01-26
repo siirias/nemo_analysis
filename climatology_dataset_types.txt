@@ -108,7 +108,7 @@ output_dir_plus_means = "\\YearTemperature\\"
 set_name = "{}005".format(data_set)
 set_name0 = "{}001".format(data_set)
 color_map = 'RdBu_r'
-var_lims=[-4.0,4.0]
+var_lims=[-3.0,3.0]
 #var_name = "Temperature_monthly"
 var_name = "SST"
 var = all_variables[var_name]
@@ -121,7 +121,7 @@ output_dir_plus_means = "\\YearTemperature\\"
 set_name = "{}002".format(data_set)
 set_name0 = "{}001".format(data_set)
 color_map = 'RdBu_r'
-var_lims=[-4.0,4.0]
+var_lims=[-3.0,3.0]
 var_name = "SST"
 var = all_variables[var_name]
 
@@ -133,7 +133,7 @@ output_dir_plus_means = "\\YearTemperature\\"
 set_name = "{}005".format(data_set)
 set_name0 = "{}002".format(data_set)
 color_map = 'RdBu_r'
-var_lims=[-2.0,2.0]
+var_lims=[-3.0,3.0]
 var_name = "SST"
 var = all_variables[var_name]
 
@@ -171,6 +171,45 @@ set_name0 = "ABD001"
 color_map = 'RdBu_r'
 var_lims=[-2.0,2.0]
 var_name = "SST"
+var = all_variables[var_name]
+
+
+
+#SET SST_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SBT_2vs1_diff
+file0 = "monthly_average_{}001.nc".format(data_set)
+file = "monthly_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SBT_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SBT"
+var = all_variables[var_name]
+
+#SET SBT_5vs1_diff
+file0 = "monthly_average_{}001.nc".format(data_set)
+file = "monthly_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SBT_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SBT"
 var = all_variables[var_name]
 
 
@@ -282,7 +321,9 @@ output_dir_plus_means = "\\YearTemperature\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = 'RdBu_r'
-var_lims=[-5.0,5.0]
+#color_map = cmo.cm.thermal
+var_lims=[-2.5,2.5]
+#var_lims=[-0.0,20.0]
 var_name = "SST"
 var = all_variables[var_name]
 
@@ -294,7 +335,9 @@ output_dir_plus_means = "\\YearTemperature\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = 'RdBu_r'
-var_lims=[-5.0,5.0]
+#color_map = cmo.cm.thermal
+var_lims=[-2.5,2.5]
+#var_lims=[-0.0,20.0]
 var_name = "SBT"
 var = all_variables[var_name]
 
@@ -306,8 +349,8 @@ output_dir_plus_means = "\\YearSalinity\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = cmo.cm.diff
-#var_lims=[-1.0,1.0]
-var_lims=[0.0,10.0]
+var_lims=[-1.0,1.0]
+#var_lims=[0.0,10.0]
 
 var_name = "SBS"
 var = all_variables[var_name]
@@ -320,9 +363,37 @@ output_dir_plus_means = "\\YearSalinity\\ABD1\\"
 set_name = "{}001".format(data_set)
 set_name0 = "ABD001"
 color_map = cmo.cm.diff
-#var_lims=[-1.0,1.0]
-var_lims=[0.0,10.0]
+var_lims=[-1.0,1.0]
+#var_lims=[0.0,10.0]
 var_name = "SSS"
 var = all_variables[var_name]
+
+
+######## FOr the assessment
+
+#SET SST_2vs1_diff_assessment
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'hot_r'
+var_lims=[0.0,2.5]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_5vs1_diff_assessment
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'hot_r'
+var_lims=[0.0,2.5]
+var_name = "SST"
+var = all_variables[var_name]
+
 
 

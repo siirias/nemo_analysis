@@ -35,8 +35,8 @@ analyze_profiles = True
 profile_types = ["vosaline", "votemper"]
 analyze_salt_trends = False
 
-plot_single_models = False
-plot_combinations = True
+plot_single_models = True
+plot_combinations = False
 
 
 plot_original = False
@@ -54,9 +54,9 @@ create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
-#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
 
 if(period['min'] >= dt.datetime(2006,1,1)):
     drop_hindcast = True
