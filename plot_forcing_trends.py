@@ -27,15 +27,15 @@ analyze_inflow = True
 analyze_atmosphere = True
 analyze_boundary = False
 
-plot_single_models = True
-plot_combinations = False
+plot_single_models = False
+plot_combinations = True
 
 plot_trends = True
 plot_smoothed = False
 plot_yearly_mean = True
 plot_original = False
-plot_cloud = True
-plot_scatter = False
+plot_cloud = False
+plot_scatter = True
 show_grid = True
 fix_inflow_ylims = False # (100,350)# False
 show_trends_in_Legend = False
@@ -187,7 +187,7 @@ if analyze_inflow:
         plt.ylim(*fix_inflow_ylims)
     plt.xlim([period['min'],period['max']])
     plt.xlabel('Year')
-    plt.ylabel('Average kg^3 Yearly inflow')
+    plt.ylabel('Average km^3 Yearly inflow')
     if(show_grid):
         plt.grid('on')
     plt.legend()

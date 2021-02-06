@@ -25,17 +25,6 @@ measurement_dir = "D:\\Data\\SmartSeaModeling\\Climatologies\\"
 data_dir = "E:\\SmartSea\\climatologies\\"  
 bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
-fig_dpi = 300
-close_figures = True  # set to True to keep figures open.
-debug_plot_only_comparison = False
-mod_min_lat = 59.92485
-mod_max_lat = 65.9080876
-mod_min_lon = 16.40257
-mod_max_lon = 25.8191425
-mod_shape_lat = 360
-mod_shape_lon = 340
-
-
 all_variables = {"Temperature_monthly":"votemper",\
                  "Salinity_monthly":"vosaline",
                  "SSS":"SSS",
@@ -55,6 +44,31 @@ shown_units = {"SSS":"-",
                "SBS":"-",
                "SST":"°C",
                "SBT":"°C"}
+
+fig_dpi = 300
+close_figures = True  # set to True to keep figures open.
+debug_plot_only_comparison = False
+mod_min_lat = 59.92485
+mod_max_lat = 65.9080876
+mod_min_lon = 16.40257
+mod_max_lon = 25.8191425
+mod_shape_lat = 360
+mod_shape_lon = 340
+
+plot_bathymetry = False
+plot_bathy_contours = True
+plot_yearly_average = True
+plot_daily_figures = False
+comparison = True   # This one is set depending on do 
+                    # the setup give name for another dataset
+comparison_climatology = 'BNSC'  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+#comparison_climatology = None
+specific_depth = 0.0    # set target depth in meters. 0.0 is ignored. 
+                        # Note: this does something only on SBT or SBS.
+
+the_proj = ccrs.PlateCarree()
+
+
 #serie_types = ["SBS_2vs1_diff", "SBS_5vs1_diff", "SBS_5vs2_diff"]
 #serie_types = [ "SBS_2vs1_diff", "SBS_5vs2_diff","SSS_2vs1_diff", "SSS_5vs1_diff", "SSS_5vs2_diff"]
 #serie_types = [ "SST_2vs1_diff", "SST_5vs2_diff","SST_5vs1_diff"]
@@ -72,20 +86,13 @@ shown_units = {"SSS":"-",
 #serie_types = [ "SBT_1vsABD1_diff_test"]
 #serie_types = [ "SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
+#serie_types = [ "SBT_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
+serie_types = [ "SST_1vsABD1_diff_test"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
 #data_sets = ["A", "B", "D"]
-plot_bathymetry = False
-plot_bathy_contours = True
-plot_yearly_average = True
-plot_daily_figures = False
-comparison = True   # This one is set depending on do 
-                    # the setup give name for another dataset
-comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
-#comparison_climatology = None
 
-the_proj = ccrs.PlateCarree()
 # read configuration from a file.
 # note: xonfig files are python statements,
 # this doesn't check for malignant code or anything like that,
@@ -162,8 +169,20 @@ for serie_type in serie_types:
                 in_set = r.groups()[0]
             elif(in_set == serie_type):
                 print(i)
-                exec(i)    
+                exec(i)
+        # slight glugdge next. SBS is in daily files, but other salinity
+        # depths are not. if SBS is used to get specific depth, the file
+        # mus be switchedfrom daily, to monthly file:
+        if(specific_depth != 0.0 and var_name == 'SBS'):
+            file = re.sub('daily','monthly',file)
+            file0 = re.sub('daily','monthly',file0)
+            var = 'vosaline'
+            
         data = xr.open_dataset(data_dir+file)
+        try:
+            depth_axis = np.array(data['deptht'])
+        except:
+            depth_axis = None
         if(len(file0)>0):
             var0 = var  # change if comparing to measurements which have other names
             if(comparison_climatology == 'BNSC_old'):
@@ -185,6 +204,7 @@ for serie_type in serie_types:
                     var0 = 'salinity_oan'
                 if(var_name == 'SBS'):
                     var0 = 'salinity_oan'
+                depth_axis0 = np.array(data0['deptht'])
             elif(comparison_climatology == 'BNSC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
@@ -203,9 +223,10 @@ for serie_type in serie_types:
                     var0 = 'salinity_oan'
                     data0 = xr.open_dataset(measurement_dir+'BNSC__salinity__climatology__1976__2005.nc')
                 data = interp_for_climatology(data,data0)
-                all_vars_tmp = list(data.keys())
-                all_vars_tmp.remove(var)
-                data = data.drop_vars(all_vars_tmp)
+                all_vars_tmp = list(data0.keys())
+                all_vars_tmp.remove(var0)
+                data0 = data0.drop_vars(all_vars_tmp)
+                depth_axis0 = np.array(data0['depth'])
             elif(comparison_climatology == 'SDC'):
                 plot_yearly_average = True
                 plot_daily_figures = False
@@ -230,6 +251,7 @@ for serie_type in serie_types:
                 data0 = data0.drop_vars(all_vars_tmp)
                 data0 = data0.groupby('time.month').mean()
                 data = interp_for_climatology(data,data0)
+                depth_axis0 = np.array(data0['depth'])
             elif(comparison_climatology == 'TSO50'):
                 plot_yearly_average = True
                 plot_daily_figures = False
@@ -247,9 +269,14 @@ for serie_type in serie_types:
                     var0 = 'salinity'
                 if(var_name == 'SBS'):
                     var0 = 'salinity'
+                depth_axis0 = np.array(data0['depth'])
                     
             else:
                 data0 = xr.open_dataset(data_dir+file0)
+                try:
+                    depth_axis0 = np.array(data0['deptht'])
+                except:
+                    depth_axis0 = None
             comparison = True
         else:
             comparison = False
@@ -289,6 +316,11 @@ for serie_type in serie_types:
                         d0_dat = smh.get_bottom(None,\
                                 np.ma.array(data0[var0],\
                                 mask = np.isnan(data0[var0])))
+                        if(specific_depth != 0.0):  # in this case we don't want bottom,
+                                                    # but rather a given depth.
+                            d0_dat = smh.get_depth(None,data0[var0],\
+                                                depth_axis0, specific_depth)
+                                            
                     day_filters0 = {
                             "Year":slice(0,None),
                             "DJF":[slice(0,2),slice(11,None)],
@@ -315,6 +347,11 @@ for serie_type in serie_types:
                         dflat = smh.get_bottom(None,\
                                 np.ma.array(d,\
                                 mask = d == 0.0))
+                        if(specific_depth != 0.0):  # in this case we don't want bottom,
+                                                    # but rather a given depth.
+                            dflat = smh.get_depth(None,d,\
+                                                depth_axis, specific_depth)
+                        
                     else:
                         dflat = d[0,:,:]  # surface layer
                 else:
@@ -324,6 +361,10 @@ for serie_type in serie_types:
                         d0flat = smh.get_bottom(None,\
                                 np.ma.array(d0,\
                                 mask = d == 0.0))  #   np.isnan(d0)
+                        if(specific_depth != 0.0):  # in this case we don't want bottom,
+                                                    # but rather a given depth.
+                            d0flat = smh.get_depth(None,d0,\
+                                                depth_axis0, specific_depth)
                     else:
                         d0flat = d0[0,:,:]  # surface layer
                 else:
@@ -339,16 +380,22 @@ for serie_type in serie_types:
                     cb.set_label('Difference ({})'.format(shown_units[var_name]))
                 else:
                     cb.set_label('{} ({})'.format(var_name, shown_units[var_name]))
+                file_var_name = var_name
+                if(specific_depth != 0.0): # let's change the var name a bit
+                    if(var_name == "SBT"):
+                        file_var_name = "{:.0f}mT".format(specific_depth)
+                    elif(var_name == "SBS"):
+                        file_var_name = "{:.0f}mS".format(specific_depth)
                 if(comparison):
-                    plt.title("{} Diff, {} \n {}-{}".format(var_name,i,file,file0))
-                    filename = "{}_{}vs{}_{}.png".format(var_name,set_name,set_name0,i)
+                    plt.title("{} Diff, {} \n {}-{}".format(file_var_name,i,file,file0))
+                    filename = "{}_{}vs{}_{}.png".format(file_var_name,set_name,set_name0,i)
                 else:
-                    plt.title("{}, {} \n {}".format(var_name,i,file))
-                    filename = "{}_{}_{}.png".format(var_name,set_name,i)
+                    plt.title("{}, {} \n {}".format(file_var_name,i,file))
+                    filename = "{}_{}_{}.png".format(file_var_name,set_name,i)
                 if(debug_plot_only_comparison):
-                    cb.set_label('{} ({})'.format(var_name, shown_units[var_name]))
-                    plt.title("{}, {} \n {}".format(var_name,i,file0))
-                    filename = "{}_{}_{}.png".format(var_name,set_name0,i)
+                    cb.set_label('{} ({})'.format(file_var_name, shown_units[var_name]))
+                    plt.title("{}, {} \n {}".format(file_var_name,i,file0))
+                    filename = "{}_{}_{}.png".format(file_var_name,set_name0,i)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         

@@ -155,6 +155,22 @@ class smh:
             
         bottom_layers.mask = ~values
         return bottom_layers
+
+    def get_depth(self, grid, depth_axis, the_depth):
+        # grid is supposed to be masked array, Time, D,Lat,Lon
+        # or D,lat, lon
+        # The idea in this is to shifht the mask one layer up,
+        # and find the values which are masked in one (and only one) of
+        # these masks. 
+        full_shape = grid.shape
+        dimensions = len(full_shape)
+        layer = np.argmin(np.abs(depth_axis-the_depth))
+        if(dimensions == 4): # case with time, D, lat, lon
+            the_layer = grid[:,layer,:,:]
+        else: # case with D, lat, lon
+            the_layer = grid[layer,:,:]
+            
+        return the_layer
             
     def set_style(self, set_name,alpha=1.0):
         # returns a dictionary that cna be used to
