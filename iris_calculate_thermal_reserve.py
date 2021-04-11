@@ -30,13 +30,14 @@ ss = smh()
 ss.grid_type = 'T'
 ss.interval = 'm'
 #ss.root_data_in = "/lustre/tmp/siirias/o/tmp/"  # gludge as the main disk is not sure enough.
-ss.root_data_in = "/scratch/project_2001635/siiriasi/smartsea_data/"
-ss.root_data_out = "/scratch/project_2001635/siiriasi/smartsea_data/"
+ss.root_data_in = "/scratch/project_2002540/siiriasi/smartsea_data/"
+ss.root_data_out = "/scratch/project_2002540/siiriasi/smartsea_data/"
 # folder_start = 'OUTPUT'
 #name_markers = ['new_REANALYSIS']
 #name_markers = ['new_REANALYSIS','REANALYSIS_SMHI','REANALYSIS']
 #name_markers = ['B001','B002','B005','D002','D005']
-name_markers = ['D005']
+#name_markers = ['REANALYSIS']
+name_markers = ['A001','B001','D001']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
@@ -57,7 +58,7 @@ for name_marker in name_markers:
         enddate = datetime.datetime(2012, 12, 31)
         ss.save_interval = 'year'
         folder_start = ''
-        ss.file_name_format = 'NORDIC-GoB_1{}_{}_{}_grid_{}.nc'
+        ss.file_name_format = 'NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
         if 'new_' in name_marker:
             ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
             ss.save_interval = 'year'

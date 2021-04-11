@@ -17,8 +17,8 @@ import matplotlib as mp
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
-from mpl_toolkits.basemap import Basemap
-from mpl_toolkits.basemap import Basemap, shiftgrid, cm
+#from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap, shiftgrid, cm
 from netCDF4 import Dataset
 from smartseahelper import smh
 import os
@@ -29,7 +29,8 @@ ss=smh()
 ss.grid_type='T'
 ss.interwall='d'
 
-name_markers=['A001','B001','C001']
+#name_markers=['A001','B001','C001']
+name_markers=['D001']
 #name_markers=['A001']  #this one tells which dataseries is handled.
 for name_marker in name_markers:
     
@@ -43,7 +44,7 @@ for name_marker in name_markers:
     ss=smh()
     ss.grid_type='T'
     ss.interwall='d'
-    ss.main_data_folder= ss.root_data_in+"/OUTPUT{}/".format(name_marker)
+    ss.main_data_folder= ss.root_data_in+"/{}/".format(name_marker)
     var1 = 'SST'  #'SST', 'SSS'
     
     
@@ -56,6 +57,7 @@ for name_marker in name_markers:
     filenames=ss.filenames_between(startdate,enddate)
     ok_files=0
     files_working=[]
+    print("cehcking files: {}".format(ss.main_data_folder))
     for f in filenames:
         if(os.path.isfile(ss.main_data_folder+f)):
             ok_files+=1
@@ -123,6 +125,9 @@ for name_marker in name_markers:
             print("Analysing {} ({} of approx {})".format(time,running_number,int(len(files_working)*30.5)))
     
     full_data=pd.DataFrame({'time':time_axis,'ice_extent':ice_extents})
-    full_data.to_csv(datadir+'ice_extent_{}.csv'.format(name_marker),index=False)
+    save_filename = datadir+'ice_extent_{}.csv'.format(name_marker)
+    print("SAVING: {}".format(save_filename))
+    full_data.to_csv(save_filename,index=False)
     yearly_data=pd.DataFrame({'year':list(yearly_ice_maximum.keys()),'max_ice':list(yearly_ice_maximum.values())})
-    yearly_data.to_csv(datadir+'yearly_max_ice_{}.csv'.format(name_marker),index=False)
+    save_filename = datadir+'yearly_max_ice_{}.csv'.format(name_marker)
+    yearly_data.to_csv(save_filename,index=False)

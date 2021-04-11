@@ -20,10 +20,10 @@ class smh:
             self.root_data_out=params['root_data_out']
             self.root_data_in=params['root_data_in']        
         self.main_data_folder=self.root_data_in+"\\OUTPUTA001\\"
-        self.file_name_format="NORDIC-GoB_1{}_{}_{}_grid_{}.nc"  
+        self.file_name_format="SS-GOB_1{}_{}_{}_grid_{}.nc"  
         self.grid_type='T'
         self.interval='d' #'d','m','h'
-        self.save_interval='month'
+        self.save_interval='year'
         self.reftime=dt.datetime(1950,1,1)
     def give_file_interval(self,unit='days'):
         multiplier=1.0

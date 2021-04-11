@@ -23,8 +23,8 @@ import re
 csv_header = "Cruise,Station,Type,yyyy-mm-ddThh:mm,Latitude [degrees_north],Longitude [degrees_east],Bot. Depth [m],Secchi Depth [m]:METAVAR:FLOAT,PRES [db],TEMP [deg C],PSAL [psu],DOXY [ml/l],PHOS [umol/l],TPHS [umol/l],SLCA [umol/l],NTRA [umol/l],NTRI [umol/l],AMON [umol/l],NTOT [umol/l],PHPH [],ALKY [meq/l],CPHL [ug/l]"
 set_names = ['A001','A002','A005','B001','B002','B005','D002','D005']
 for set_name in set_names:
-    data_dir= "/scratch/project_2001635/siiriasi/smartsea_data/{}/".format(set_name)
-    out_dir = "/scratch/project_2001635/siiriasi/smartsea_data/converted_csv/"
+    data_dir= "/scratch/project_2002540/siiriasi/smartsea_data/{}/".format(set_name)
+    out_dir = "/scratch/project_2002540/siiriasi/smartsea_data/converted_csv/"
 #    data_dir= "D:\\Data\\SmartSeaModeling\\SharkExamples\\"
 #    out_dir = "D:\\Data\\SmartSeaModeling\\converted_csv\\"
 
