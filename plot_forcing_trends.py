@@ -25,7 +25,7 @@ fig_size = (10*fig_factor,7*fig_factor)
 fig_dpi = 300
 analyze_inflow = True
 analyze_atmosphere = True
-analyze_boundary = False
+analyze_boundary = True
 
 plot_single_models = False
 plot_combinations = True
@@ -33,7 +33,7 @@ plot_combinations = True
 plot_trends = True
 plot_smoothed = False
 plot_yearly_mean = True
-plot_original = False
+plot_original = True
 plot_cloud = False
 plot_scatter = True
 show_grid = True
@@ -205,6 +205,7 @@ if analyze_boundary:
 #    data_dir ='D:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\boundaryjusthistory\\'
     data_dir = main_data_dir + '\\boundary\\'
 #    for subset in ['boundary_mean','5meter','20meter','80meter','120meter']:
+    yearly_means_bnds = {}
     for subset in ['boundary_mean','5meter','80meter']:
         files = os.listdir(data_dir)
         files = [f for f in files if subset in f]
@@ -213,12 +214,17 @@ if analyze_boundary:
             set_name=re.search('_([^_]*)\.csv',f).groups()[0]
             dat[set_name]=pd.read_csv(data_dir+f,\
                                  parse_dates=[0])
+            dat[set_name]=dat[set_name].set_index('time')
+            if(not set_name in yearly_means_bnds.keys()):
+                yearly_means_bnds[set_name]={}
+            yearly_means_bnds[set_name][subset] = \
+                dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
         plt.figure(figsize=fig_size)
         plt.title("Boundary Salinity, {}".format(subset))
         for s in dat:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
-            plt.plot(d.index,d[b_val], label='_nolegend_', zorder=11,**sm.sm.set_style(s,0.2))
+            plt.plot(d.index,d[b_val], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
     
             smooth_window = 366*2
             smoothed = d[b_val].ewm(span = smooth_window, min_periods=smooth_window).mean()

@@ -58,10 +58,10 @@ mod_shape_lon = 340
 plot_bathymetry = False
 plot_bathy_contours = True
 plot_yearly_average = True
-plot_daily_figures = False
+plot_daily_figures = True
 comparison = True   # This one is set depending on do 
                     # the setup give name for another dataset
-comparison_climatology = 'BNSC'  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
+comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
 #comparison_climatology = None
 specific_depth = 0.0    # set target depth in meters. 0.0 is ignored. 
                         # Note: this does something only on SBT or SBS.
@@ -85,9 +85,10 @@ the_proj = ccrs.PlateCarree()
 #serie_types = [ "SBT_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
 #serie_types = [ "SBT_1vsABD1_diff_test"]
 #serie_types = [ "SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
-serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
+#serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 #serie_types = [ "SBT_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
-serie_types = [ "SST_1vsABD1_diff_test"]
+#serie_types = [ "SST_1vsABD1_diff_test"]
+serie_types = [ "SST_1"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -303,30 +304,31 @@ for serie_type in serie_types:
             day_filters0 = day_filters.copy() 
             for i in day_filters:
                 fig = create_main_map(the_proj)
-                if(comparison_climatology == None):
-                    lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
-                    lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
-                    lon,lat = np.meshgrid(lon,lat)
-                    d0_dat = data0[var0][:,:,:]
-                else: # data has been modified, so get the lat lon there
-                    lat = np.array(data['lat'])
-                    lon = np.array(data['lon'])
-                    d0_dat = data0[var0][:,0,:,:]
-                    if(var_name == 'SBS' or var_name == 'SBT'): # have to gather bottom layer
-                        d0_dat = smh.get_bottom(None,\
-                                np.ma.array(data0[var0],\
-                                mask = np.isnan(data0[var0])))
-                        if(specific_depth != 0.0):  # in this case we don't want bottom,
-                                                    # but rather a given depth.
-                            d0_dat = smh.get_depth(None,data0[var0],\
-                                                depth_axis0, specific_depth)
-                                            
-                    day_filters0 = {
-                            "Year":slice(0,None),
-                            "DJF":[slice(0,2),slice(11,None)],
-                            "MAM":slice(2,5),
-                            "JJA":slice(5,8),
-                            "SON":slice(8,11)}
+                if(comparison):
+                    if(comparison_climatology == None):
+                        lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
+                        lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
+                        lon,lat = np.meshgrid(lon,lat)
+                        d0_dat = data0[var0][:,:,:]
+                    else: # data has been modified, so get the lat lon there
+                        lat = np.array(data['lat'])
+                        lon = np.array(data['lon'])
+                        d0_dat = data0[var0][:,0,:,:]
+                        if(var_name == 'SBS' or var_name == 'SBT'): # have to gather bottom layer
+                            d0_dat = smh.get_bottom(None,\
+                                    np.ma.array(data0[var0],\
+                                    mask = np.isnan(data0[var0])))
+                            if(specific_depth != 0.0):  # in this case we don't want bottom,
+                                                        # but rather a given depth.
+                                d0_dat = smh.get_depth(None,data0[var0],\
+                                                    depth_axis0, specific_depth)
+                                                
+                        day_filters0 = {
+                                "Year":slice(0,None),
+                                "DJF":[slice(0,2),slice(11,None)],
+                                "MAM":slice(2,5),
+                                "JJA":slice(5,8),
+                                "SON":slice(8,11)}
                 if(type(day_filters[i]) == list):
                     d = np.mean(np.concatenate(
                             (data[var][day_filters[i][0],:,:],

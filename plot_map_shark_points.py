@@ -33,6 +33,10 @@ center = [(plot_area[0]+plot_area[1])*0.5, (plot_area[2]+plot_area[3])*0.5]
 lat_steps = 1.0
 lon_steps = 1.0
 figure_size = (10,10)
+
+plot_area = [17.5, 23.0, 59.75, 60.7]
+figure_size = (10,5)
+
 #requested_proj = ccrs.PlateCarree()
 requested_proj = ccrs.LambertAzimuthalEqualArea(center[0],center[1])
 #requested_proj = ccrs.UTM(34)
@@ -137,6 +141,6 @@ for name in ice_dat:
                  zorder = 120, transform = the_proj)
     
 plt.title('SHARK Points stored in SmartSea')                   
-plt.savefig(output_dir+out_filename,facecolor='w',dpi=300)
-print("saved {}".format(output_dir+out_filename))
+#plt.savefig(output_dir+out_filename,facecolor='w',dpi=300)
+#print("saved {}".format(output_dir+out_filename))
         

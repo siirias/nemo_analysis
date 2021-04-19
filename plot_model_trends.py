@@ -22,7 +22,9 @@ register_matplotlib_converters()
 
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
-out_dir = sm.root_data_out+"figures\\SmartSea\\"
+sm.root_data_in = "E:\\SmartSea\\new_dataset\\"
+#sm.root_data_in = "D:\\Data\\svnfmi_merimallit\\smartsea\\"
+out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\"
 fig_factor = 0.8 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
@@ -32,8 +34,10 @@ content_types = {"analyze_salt_content":True,\
                  "analyze_heat_content":True}
 
 analyze_profiles = True
-profile_types = ["vosaline", "votemper"]
-analyze_salt_trends = False
+#profile_types = ["vosaline", "votemper"]
+profile_types = ["vosaline"]
+analyze_salt_trends = True
+analyze_sbs_changes = True
 
 plot_single_models = True
 plot_combinations = False
@@ -128,7 +132,7 @@ for a in content_types:
                 skip_this = False
                 set_name = set_name.groups()[0]
                 if(set_name == "REANALYSIS"):
-                    set_name = "Hindcast"
+                    set_name = "hindcast"
                     if(drop_hindcast):
                         skip_this = True
             if(not skip_this):
@@ -265,6 +269,7 @@ gathered_profile_trends = ValueSet()
 if analyze_profiles:
 #    variable = 'votemper'
 #    variable = 'vosaline'
+    yearly_means = {}
     for variable in profile_types:
     #    all_depths = [0.0,50.0, 100.0, 2000.0] #depth, if under the bottom, the lowest with number is accepted.
         all_depths = [0.0,'bottom_sample'] #depth, if under the bottom, the lowest with number is accepted.
@@ -277,6 +282,7 @@ if analyze_profiles:
         if(variable in ['votemper']):
             variable_name = "Temperature"
         for point in points:
+            yearly_means[point] = {}
             for depth_in_list in all_depths:
     #            data_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
                 data_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
@@ -296,11 +302,13 @@ if analyze_profiles:
                         skip_this = False
                         set_name = set_name.groups()[0]
                         if(set_name == "REANALYSIS"):
-                            set_name = "Hindcast"
+                            set_name = "hindcast"
                             if(drop_hindcast):
                                 skip_this = True
                     if(not skip_this):
 #                        print(set_name)
+                        if(not set_name in yearly_means[point].keys()):
+                            yearly_means[point][set_name] = {}
                         D = Dataset(data_dir+f)
                         values = D[variable]
                         times = D['date']
@@ -319,6 +327,8 @@ if analyze_profiles:
                                        'lat':lat,
                                        'lon':lon})
                         dat[set_name] = dat[set_name].set_index('time')
+                        yearly_means[point][set_name][depth_in] = \
+                            dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
 
                 #calculate the means for History, RCP4.5 and RCP8.5
                 if(plot_combinations):
