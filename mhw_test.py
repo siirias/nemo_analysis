@@ -21,12 +21,13 @@ import xarray as xr
 import pandas as pd
 import cmocean as cmo
 from smartseahelper import smh
+from collections import Counter # Needed for the histogram stuff
 
 
 output_dir = "D:\\Data\\Figures\\SmartSea\\mhw\\"
 data_dir = "E:\\SmartSea\\all_shark_files\\"  
 plot_figures = False
-recalculate = True
+recalculate = False
 
 datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
             {'n':'B','ref':"B001", '4.5':"B002", '8.5':"B005"},\
@@ -82,7 +83,8 @@ def clim_data_to_axis(reference, clim_data_one):
                      [parameter].values[0]
         return clim_data
 
-def gather_extremes(treshold, data, parameter):
+def gather_extremes(treshold, mean_clim, data, parameter):
+    max_cathegory = 4
     max_break = 2
     min_heat_wave = 5
     comparison = np.array(data[parameter]).astype('float') - treshold
@@ -91,6 +93,8 @@ def gather_extremes(treshold, data, parameter):
     heat_wave_length = 0
     heat_wave_start = None
     heat_wave_peak_diff = 0.0
+    heat_wave_cathegory_limit = 0.0
+    cathegory = 0
     # init the heatwaves. Add one dummy to get statistics start right,
     # even if there is no heatwaves in first year.
     heat_waves = [] 
@@ -101,6 +105,11 @@ def gather_extremes(treshold, data, parameter):
             in_heat_wave = True
             if(comparison[i]>heat_wave_peak_diff):
                 heat_wave_peak_diff = comparison[i]
+                heat_wave_cathegory_limit = treshold[i] - mean_clim[i] # 
+                cathegory = np.floor(\
+                            heat_wave_peak_diff/heat_wave_cathegory_limit)+1
+                if(cathegory>max_cathegory):
+                    cathegory = max_cathegory
             if(break_length == 0):
                 heat_wave_length +=1
             else:
@@ -121,7 +130,8 @@ def gather_extremes(treshold, data, parameter):
                         if(heat_wave_length>=min_heat_wave):
                             heat_waves.append({'time':heat_wave_start, \
                                                'length':heat_wave_length,\
-                                               'peak_diff':heat_wave_peak_diff})
+                                               'peak_diff':heat_wave_peak_diff,\
+                                               'cathegory':cathegory})
             if( not in_heat_wave):
                 heat_wave_start = None
                 heat_wave_length = 0
@@ -160,14 +170,18 @@ if(recalculate):
                     clim_data_trigg = clim_data_to_axis(data_85, clim_data_90_perc)
                     clim_data_trigg_low = clim_data_to_axis(data_85, clim_data_10_perc)
         
+                    mean_vals = np.array(clim_data_long[parameter]).astype('float')
                     koe_ref = np.array(clim_data_trigg_ref[parameter]).astype('float')
                     koe = np.array(clim_data_trigg[parameter]).astype('float')
                     koe2 = np.array(clim_data_trigg_low[parameter]).astype('float')
                     cd_long = np.array(clim_data_long[parameter]).astype('float')
     
-                    heatwaves['ref'][dataset['n']][point] = gather_extremes(koe_ref, data_ref, parameter)
-                    heatwaves['45'][dataset['n']][point] = gather_extremes(koe, data_45, parameter)
-                    heatwaves['85'][dataset['n']][point] = gather_extremes(koe, data_85, parameter)
+                    heatwaves['ref'][dataset['n']][point] = \
+                        gather_extremes(koe_ref, mean_vals, data_ref, parameter)
+                    heatwaves['45'][dataset['n']][point] = \
+                        gather_extremes(koe, mean_vals, data_45, parameter)
+                    heatwaves['85'][dataset['n']][point] = \
+                        gather_extremes(koe, mean_vals, data_85, parameter)
                     print("{},{},{} done, {} sec, total {}, sec".format(\
                          case,dataset['n'],point, \
                          time.time() - last_time, time.time() - start_time))
@@ -239,10 +253,17 @@ if(recalculate):
                                 pd.Grouper(freq=group_p)).mean()['peak_diff']
                     tmp['peak_diff_min'] = \
                                heatwaves[i][dataset['n']][point].groupby(\
-                                pd.Grouper(freq=group_p)).quantile(0.1)['peak_diff']
+                                pd.Grouper(freq=group_p)).quantile(0.05)['peak_diff']
                     tmp['peak_diff_max'] = \
                                heatwaves[i][dataset['n']][point].groupby(\
-                                pd.Grouper(freq=group_p)).quantile(0.9)['peak_diff']
+                                pd.Grouper(freq=group_p)).quantile(0.95)['peak_diff']
+
+                    tmp['peak_diff_75'] = \
+                               heatwaves[i][dataset['n']][point].groupby(\
+                                pd.Grouper(freq=group_p)).quantile(0.75)['peak_diff']
+                    tmp['peak_diff_25'] = \
+                               heatwaves[i][dataset['n']][point].groupby(\
+                                pd.Grouper(freq=group_p)).quantile(0.25)['peak_diff']
                     
                     tmp['len_std'] = \
                                heatwaves[i][dataset['n']][point].groupby(\
@@ -358,58 +379,141 @@ if(recalculate):
                 
 
 #Then some plottings:
+thick_line = 5
 for case in case_data:    
-    plt.figure()
-    plt.title(case)
+    #Plot Average length of a heatwave
+    shift_plus = 30*6
+    fig = plt.figure()
+    plt.title("Length of Heatwaves (days)\n {}".format(case))
     decadals = case_data[case]['decadals']
     heatwaves = case_data[case]['heatwaves']
     hw_days = case_data[case]['hw_days']
-#    for s in decadals['45'].keys(): #drop the last ones, as they have too little data
-#        plt.plot(decadals['ref'][s].index[:-1],decadals['ref'][s].length[:-1],\
-#                 color = 'k', marker = '*', alpha = 0.2, linewidth = 0.0)
-#        plt.plot(decadals['45'][s].index[:-1],decadals['45'][s].length[:-1],\
-#                 color = 'b', marker = '*', alpha = 0.2, linewidth = 0.0)
-#        plt.plot(decadals['85'][s].index[:-1],decadals['85'][s].length[:-1],\
-#                 color = 'r', marker = '*', alpha = 0.2, linewidth = 0.0)    
-    
-#    plt.plot(decadals['ref']['all'].index[:-1],decadals['ref']['all'].length[:-1],\
-#             color = 'k', marker = '*', alpha = 1.0)
-#    plt.plot(decadals['45']['all'].index[:-1],decadals['45']['all'].length[:-1],\
-#             color = 'b', marker = '*', alpha = 1.0)
-#    plt.plot(decadals['85']['all'].index[:-1],decadals['85']['all'].length[:-1],\
-#             color = 'r', marker = '*', alpha = 1.0)    
-    
+    shift = dt.timedelta(0)
     for i,c in zip(['ref','45','85'],['k','b','r']):
-        plt.errorbar(\
-                     decadals[i]['all'].index[:-1],\
+        plt.plot(\
+                     decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].length[:-1],\
-                     yerr =  decadals[i]['all'].len_std[:-1],\
-                     elinewidth = 4, linewidth = 0, color = c)
-        minmax = np.vstack((decadals[i]['all'].len_high[:-1]-decadals[i]['all'].length[:-1],\
-                            decadals[i]['all'].len_low[:-1]-decadals[i]['all'].length[:-1]))        
+                     marker = '_', markersize = 8, linewidth = 0, color = c)
+        minmax = np.vstack((decadals[i]['all'].len_75[:-1]-decadals[i]['all'].length[:-1],\
+                            decadals[i]['all'].len_25[:-1]-decadals[i]['all'].length[:-1]))        
         minmax = np.abs(minmax)
         plt.errorbar(\
-                     decadals[i]['all'].index[:-1],\
+                     decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].length[:-1],\
                      yerr =  minmax,\
-                     elinewidth = 1, linewidth = 0, capsize = 5, color = c)
+                     elinewidth = thick_line, linewidth = 0, color = c)
+        
+        minmax = np.vstack((decadals[i]['all'].len_low[:-1]-decadals[i]['all'].length[:-1],\
+                            decadals[i]['all'].len_high[:-1]-decadals[i]['all'].length[:-1]))        
+        minmax = np.abs(minmax)
+        plt.errorbar(\
+                     decadals[i]['all'].index[:-1]+shift,\
+                     decadals[i]['all'].length[:-1],\
+                     yerr =  minmax,\
+                     elinewidth = 1, linewidth = 0, capsize = 0, color = c)
+        shift += dt.timedelta(shift_plus)
+    plt.grid()
+    plt.ylabel("mean length in days of heatwaves")
+    plt.xlabel("Time (10 year averages)")
+
+
 
     #Days of heatwave total
-    plt.figure()
-    plt.title("Days of Heatwaves in 10 years. {}".format(case))
+    fig = plt.figure()
+    plt.title("Days of Heatwaves in 10 years\n{}".format(case))
+    shift = dt.timedelta(0)
     for i,c in zip(['ref','45','85'],['k','b','r']):
-        plt.errorbar(\
-                     hw_days[i]['all'].index[:-1],\
+        plt.plot(\
+                     hw_days[i]['all'].index[:-1]+shift,\
                      hw_days[i]['all'].isinHW[:-1],\
-                     yerr =  hw_days[i]['all'].days_std[:-1],\
-                     elinewidth = 4, linewidth = 0, color = c)
+                     marker = '_', markersize = 8, linewidth = 0, color = c)
+        minmax = np.vstack((hw_days[i]['all'].days_75[:-1]-hw_days[i]['all'].isinHW[:-1],\
+                            hw_days[i]['all'].days_25[:-1]-hw_days[i]['all'].isinHW[:-1]))        
+        minmax = np.abs(minmax)
+        plt.errorbar(\
+                     hw_days[i]['all'].index[:-1]+shift,\
+                     hw_days[i]['all'].isinHW[:-1],\
+                     yerr =  minmax,\
+                     elinewidth =thick_line, linewidth = 0, color = c)
         minmax = np.vstack((hw_days[i]['all'].days_high[:-1]-hw_days[i]['all'].isinHW[:-1],\
                             hw_days[i]['all'].days_low[:-1]-hw_days[i]['all'].isinHW[:-1]))        
         minmax = np.abs(minmax)
         plt.errorbar(\
-                     hw_days[i]['all'].index[:-1],\
+                     hw_days[i]['all'].index[:-1]+shift,\
                      hw_days[i]['all'].isinHW[:-1],\
                      yerr =  minmax,\
-                     elinewidth = 1, linewidth = 0, capsize = 5, color = c)
+                     elinewidth = 1, linewidth = 0, capsize = 0, color = c)
+        shift += dt.timedelta(shift_plus)
+        fig.get_axes()[0].set_ylim(0,3600)
+    plt.grid()
+    plt.ylabel("Average Days of heatwaves in 10 years")
+    plt.xlabel("Time (10 year averages)")
         
+    #Average Peak difference
+    fig = plt.figure()
+    plt.title("Peak difference in 10 years\n{}".format(case))
+    shift = dt.timedelta(0)
+    for i,c in zip(['ref','45','85'],['k','b','r']):
+        plt.plot(\
+                     decadals[i]['all'].index[:-1]+shift,\
+                     decadals[i]['all'].peak_diff[:-1],\
+                     marker = '_', markersize = 8, linewidth = 0, color = c)
+        minmax = np.vstack((decadals[i]['all'].peak_diff_25[:-1]-decadals[i]['all'].peak_diff[:-1],\
+                            decadals[i]['all'].peak_diff_75[:-1]-decadals[i]['all'].peak_diff[:-1]))        
+        minmax = np.abs(minmax)
+        plt.errorbar(\
+                     decadals[i]['all'].index[:-1]+shift,\
+                     decadals[i]['all'].peak_diff[:-1],\
+                     yerr =  minmax,\
+                     elinewidth = thick_line, linewidth = 0, color = c)
         
+        minmax = np.vstack((decadals[i]['all'].peak_diff_min[:-1]-decadals[i]['all'].peak_diff[:-1],\
+                            decadals[i]['all'].peak_diff_max[:-1]-decadals[i]['all'].peak_diff[:-1]))        
+        minmax = np.abs(minmax)
+        plt.errorbar(\
+                     decadals[i]['all'].index[:-1]+shift,\
+                     decadals[i]['all'].peak_diff[:-1],\
+                     yerr =  minmax,\
+                     elinewidth = 1, linewidth = 0, capsize = 0, color = c)
+        shift += dt.timedelta(shift_plus)
+    plt.grid()
+    plt.ylabel("°C exceeding climatology 95 percentile")
+    plt.xlabel("Time (10 year averages)")
+    
+    # show the amount of cathegories
+    fig = plt.figure()
+    plt.title("MHW Cathegories occurences\n{}".format(case))
+    shift = dt.timedelta(0)
+    for i,c in zip(['ref','45','85'],['k','b','r']):
+        tmp_all = []
+        points_in_case = len(cases[case])  # used to scale unmbers to 'per point'
+        for model in heatwaves[i]:
+            tmp = pd.concat([heatwaves[i][model][x] for x in heatwaves[i][model]])
+            tmp_all.append(tmp)
+        cathegories = pd.concat(tmp_all)
+        frame_size = dt.timedelta(days = 3652.5)
+        time_frame = cathegories.index.min()
+        while(time_frame < cathegories.index.max()-frame_size):
+            tmp = cathegories[cathegories.index < time_frame + frame_size]
+            tmp = cathegories[cathegories.index > time_frame]
+            occurences = Counter(tmp['cathegory'])
+            cath_names = [x for x in list(occurences.keys()) if not np.isnan(x)]
+            cath_names.sort()
+            total_hw = 0
+            for o in cath_names:
+                if(occurences[o]>1):
+                    total_hw += occurences[o]
+                    
+            for o in cath_names:
+                if(occurences[o]>1):
+                    tmp_shift = dt.timedelta(30*12)*o
+                    plt.fill_between([time_frame+tmp_shift+shift,\
+                                      time_frame+tmp_shift+shift+dt.timedelta(90)],\
+                             [occurences[o]/(total_hw)]*2,\
+                             linewidth = 1, color = c)
+                    plt.text(time_frame+tmp_shift+shift, occurences[o]/total_hw,\
+                             "{:0.0f}".format(o), horizontalalignment='center')
+            time_frame += frame_size
+        shift += dt.timedelta(shift_plus)
+                    
+                    
