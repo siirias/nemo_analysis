@@ -26,6 +26,9 @@ from collections import Counter # Needed for the histogram stuff
 
 output_dir = "D:\\Data\\Figures\\SmartSea\\mhw\\"
 data_dir = "E:\\SmartSea\\all_shark_files\\"  
+out_dir = "D:\\Data\\figures\\smartsea\\MHW\\"
+
+
 plot_figures = False
 recalculate = False
 
@@ -44,15 +47,36 @@ datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
 #setup_name = "Bay of Bothnia"
 
 cases = {'Bothnian Sea':["F64", "SR5", "MS4", "C3", "US5B" ],
-         'Bay of Bothnia':["F16","BO5", "BO3", "F9", "F3" ],
+         'Bothnian Bay':["F16","BO5", "BO3", "F9", "F3" ],
          'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
 
 #cases = {'Bothnian Sea':["F64", "SR5" ],
 #         'Bay of Bothnia':["F16","BO5" ]}
 
+accepted_dates = 'Summer' #'Whole year' 'Winter', 'Summer', 'Spring', 'Autumn'
+yearday_filter = list(range(1,368))
+#any year will do here, just want the yearday number
+if(accepted_dates == 'Summer'):
+    yearday_filter = list(range(dt.datetime(2020,6,1).timetuple().tm_yday,\
+                           dt.datetime(2020,9,1).timetuple().tm_yday))
+if(accepted_dates == 'Autumn'):
+    yearday_filter = list(range(dt.datetime(2020,9,1).timetuple().tm_yday,\
+                           dt.datetime(2020,12,1).timetuple().tm_yday))
+if(accepted_dates == 'Winter'):
+    yearday_filter = list(range(dt.datetime(2020,12,1).timetuple().tm_yday,\
+                           dt.datetime(2020,12,31).timetuple().tm_yday))
+    yearday_filter += list(range(dt.datetime(2020,1,1).timetuple().tm_yday,\
+                           dt.datetime(2020,3,1).timetuple().tm_yday))
+if(accepted_dates == 'Spring'):
+    yearday_filter = list(range(dt.datetime(2020,3,1).timetuple().tm_yday,\
+                           dt.datetime(2020,6,1).timetuple().tm_yday))
+    
+lenght_limit_for_axis = len(yearday_filter)+1
+
 study_depths = [0.0]
 parameter = 'votemper'
 group_p = '10AS'
+
 
 
 def gather_dataset(dataset, part, parameter):
@@ -83,7 +107,7 @@ def clim_data_to_axis(reference, clim_data_one):
                      [parameter].values[0]
         return clim_data
 
-def gather_extremes(treshold, mean_clim, data, parameter):
+def gather_extremes(treshold, mean_clim, data, accepted_dates, parameter):
     max_cathegory = 4
     max_break = 2
     min_heat_wave = 5
@@ -99,7 +123,8 @@ def gather_extremes(treshold, mean_clim, data, parameter):
     # even if there is no heatwaves in first year.
     heat_waves = [] 
     for i  in range(len(data.index)):
-        if comparison[i] > 0.0:
+        the_dayofyear = data.index[i].timetuple().tm_yday
+        if comparison[i] > 0.0 and the_dayofyear in yearday_filter:
             if(not in_heat_wave):
                 heat_wave_start = data.index[i]
             in_heat_wave = True
@@ -162,8 +187,8 @@ if(recalculate):
                     data_85 = gather_dataset(dataset, '8.5', parameter)
                     #calculate the climatology values:
                     clim_data_one = data_ref.groupby(data_ref.index.dayofyear).mean() # one year
-                    clim_data_90_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.95) # one year
-                    clim_data_10_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.05) # one year
+                    clim_data_90_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.90) # one year
+                    clim_data_10_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.1) # one year
                     # then copy this to cover the whole series:
                     clim_data_long =  clim_data_to_axis(data_85,clim_data_one)
                     clim_data_trigg_ref = clim_data_to_axis(data_ref, clim_data_90_perc)
@@ -177,11 +202,11 @@ if(recalculate):
                     cd_long = np.array(clim_data_long[parameter]).astype('float')
     
                     heatwaves['ref'][dataset['n']][point] = \
-                        gather_extremes(koe_ref, mean_vals, data_ref, parameter)
+                        gather_extremes(koe_ref, mean_vals, data_ref, accepted_dates, parameter)
                     heatwaves['45'][dataset['n']][point] = \
-                        gather_extremes(koe, mean_vals, data_45, parameter)
+                        gather_extremes(koe, mean_vals, data_45, accepted_dates, parameter)
                     heatwaves['85'][dataset['n']][point] = \
-                        gather_extremes(koe, mean_vals, data_85, parameter)
+                        gather_extremes(koe, mean_vals, data_85, accepted_dates, parameter)
                     print("{},{},{} done, {} sec, total {}, sec".format(\
                          case,dataset['n'],point, \
                          time.time() - last_time, time.time() - start_time))
@@ -379,25 +404,33 @@ if(recalculate):
                 
 
 #Then some plottings:
-thick_line = 5
+c_ref = '#000000'
+c_45 = '#5050ff'
+c_85 = '#ff9000'
+base_fig_size = (6,4)
 for case in case_data:    
     #Plot Average length of a heatwave
-    shift_plus = 30*6
-    fig = plt.figure()
-    plt.title("Length of Heatwaves (days)\n {}".format(case))
+    thick_line = 8
+    shift_plus = 30*32
+    marker_s = 12
+    fig = plt.figure(figsize=base_fig_size)
+    plt.title("Length of Heatwaves (days)\n {}, {}".format(accepted_dates, case))
     decadals = case_data[case]['decadals']
     heatwaves = case_data[case]['heatwaves']
     hw_days = case_data[case]['hw_days']
     shift = dt.timedelta(0)
-    for i,c in zip(['ref','45','85'],['k','b','r']):
+    lines = [] # used to mark the ones to label
+    for i,c in zip(['ref','45','85'],[c_ref,c_45,c_85]):
         plt.plot(\
                      decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].length[:-1],\
-                     marker = '_', markersize = 8, linewidth = 0, color = c)
+                     marker = '_', markersize = marker_s, linewidth = 0, color = c,\
+                     zorder = 10)
         minmax = np.vstack((decadals[i]['all'].len_75[:-1]-decadals[i]['all'].length[:-1],\
                             decadals[i]['all'].len_25[:-1]-decadals[i]['all'].length[:-1]))        
         minmax = np.abs(minmax)
-        plt.errorbar(\
+
+        tmp_line = plt.errorbar(\
                      decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].length[:-1],\
                      yerr =  minmax,\
@@ -411,57 +444,73 @@ for case in case_data:
                      decadals[i]['all'].length[:-1],\
                      yerr =  minmax,\
                      elinewidth = 1, linewidth = 0, capsize = 0, color = c)
+        lines.append(tmp_line)
         shift += dt.timedelta(shift_plus)
+    plt.ylim(0,lenght_limit_for_axis)
     plt.grid()
     plt.ylabel("mean length in days of heatwaves")
     plt.xlabel("Time (10 year averages)")
+    plt.legend(lines, ["reference run", "RCP 4.5", "RCP 8.5"], loc ='upper left')
+    out_filename = "{}_{}_lengths.png".format(\
+                accepted_dates, re.sub('\s','_',case))
+    plt.savefig(out_dir+out_filename, dpi = 300, bbox_inches='tight')
+    print("saved: {} {}".format(out_dir, out_filename))
 
 
 
     #Days of heatwave total
-    fig = plt.figure()
-    plt.title("Days of Heatwaves in 10 years\n{}".format(case))
+    fig = plt.figure(figsize=base_fig_size)
+    lines = [] # used to mark the ones to label
+    plt.title("Days of Heatwaves in a year\n{}, {}".format(accepted_dates, case))
     shift = dt.timedelta(0)
-    for i,c in zip(['ref','45','85'],['k','b','r']):
+    for i,c in zip(['ref','45','85'],[c_ref,c_45,c_85]):
         plt.plot(\
                      hw_days[i]['all'].index[:-1]+shift,\
-                     hw_days[i]['all'].isinHW[:-1],\
-                     marker = '_', markersize = 8, linewidth = 0, color = c)
+                     hw_days[i]['all'].isinHW[:-1]*0.1,\
+                     marker = '_', markersize = marker_s, linewidth = 0, color = c)
         minmax = np.vstack((hw_days[i]['all'].days_75[:-1]-hw_days[i]['all'].isinHW[:-1],\
                             hw_days[i]['all'].days_25[:-1]-hw_days[i]['all'].isinHW[:-1]))        
-        minmax = np.abs(minmax)
-        plt.errorbar(\
+        minmax = np.abs(minmax)*0.1
+        tmp_line = plt.errorbar(\
                      hw_days[i]['all'].index[:-1]+shift,\
-                     hw_days[i]['all'].isinHW[:-1],\
+                     hw_days[i]['all'].isinHW[:-1]*0.1,\
                      yerr =  minmax,\
                      elinewidth =thick_line, linewidth = 0, color = c)
         minmax = np.vstack((hw_days[i]['all'].days_high[:-1]-hw_days[i]['all'].isinHW[:-1],\
                             hw_days[i]['all'].days_low[:-1]-hw_days[i]['all'].isinHW[:-1]))        
-        minmax = np.abs(minmax)
+        minmax = np.abs(minmax)*0.1
         plt.errorbar(\
                      hw_days[i]['all'].index[:-1]+shift,\
-                     hw_days[i]['all'].isinHW[:-1],\
+                     hw_days[i]['all'].isinHW[:-1]*0.1,\
                      yerr =  minmax,\
                      elinewidth = 1, linewidth = 0, capsize = 0, color = c)
         shift += dt.timedelta(shift_plus)
-        fig.get_axes()[0].set_ylim(0,3600)
+        lines.append(tmp_line)
+        fig.get_axes()[0].set_ylim(0, len(yearday_filter))
+    plt.ylim(0,lenght_limit_for_axis)
     plt.grid()
-    plt.ylabel("Average Days of heatwaves in 10 years")
+    plt.ylabel("10 years average days of heatwaves in a year")
     plt.xlabel("Time (10 year averages)")
+    plt.legend(lines, ["reference run", "RCP 4.5", "RCP 8.5"], loc ='upper left')
+    out_filename = "{}_{}_days.png".format(\
+                accepted_dates, re.sub('\s','_',case))
+    plt.savefig(out_dir+out_filename, dpi = 300, bbox_inches='tight')
+    print("saved: {} {}".format(out_dir, out_filename))
         
     #Average Peak difference
-    fig = plt.figure()
-    plt.title("Peak difference in 10 years\n{}".format(case))
+    lines = [] # used to mark the ones to label
+    fig = plt.figure(figsize=base_fig_size)
+    plt.title("Peak difference in 10 years\n{}, {}".format(accepted_dates, case))
     shift = dt.timedelta(0)
-    for i,c in zip(['ref','45','85'],['k','b','r']):
+    for i,c in zip(['ref','45','85'],[c_ref,c_45,c_85]):
         plt.plot(\
                      decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].peak_diff[:-1],\
-                     marker = '_', markersize = 8, linewidth = 0, color = c)
+                     marker = '_', markersize = marker_s, linewidth = 0, color = c)
         minmax = np.vstack((decadals[i]['all'].peak_diff_25[:-1]-decadals[i]['all'].peak_diff[:-1],\
                             decadals[i]['all'].peak_diff_75[:-1]-decadals[i]['all'].peak_diff[:-1]))        
         minmax = np.abs(minmax)
-        plt.errorbar(\
+        tmp_line = plt.errorbar(\
                      decadals[i]['all'].index[:-1]+shift,\
                      decadals[i]['all'].peak_diff[:-1],\
                      yerr =  minmax,\
@@ -476,17 +525,27 @@ for case in case_data:
                      yerr =  minmax,\
                      elinewidth = 1, linewidth = 0, capsize = 0, color = c)
         shift += dt.timedelta(shift_plus)
+        lines.append(tmp_line)
+    plt.ylim(0,7)
     plt.grid()
-    plt.ylabel("°C exceeding climatology 95 percentile")
+    plt.ylabel("°C exceeding climatology 90 percentile")
     plt.xlabel("Time (10 year averages)")
+    plt.legend(lines, ["reference run", "RCP 4.5", "RCP 8.5"], loc ='upper left')
+    out_filename = "{}_{}_peak_temp.png".format(\
+                accepted_dates, re.sub('\s','_',case))
+    plt.savefig(out_dir+out_filename, dpi = 300, bbox_inches='tight')
+    print("saved: {} {}".format(out_dir, out_filename))
     
     # show the amount of cathegories
-    fig = plt.figure()
-    plt.title("MHW Cathegories occurences\n{}".format(case))
+    shift_plus = 30*15
+    bar_width = 0.8
+    lines = [] # used to mark the ones to label
+    fig = plt.figure(figsize=(12,4))
+    plt.title("MHW Cathegories occurences\n{}, {}".format(accepted_dates, case))
     shift = dt.timedelta(0)
-    for i,c in zip(['ref','45','85'],['k','b','r']):
+    for i,c in zip(['ref','45','85'],[c_ref,c_45,c_85]):
         tmp_all = []
-        points_in_case = len(cases[case])  # used to scale unmbers to 'per point'
+        points_in_case = len(cases[case])  # used to scale numbers to 'per point'
         for model in heatwaves[i]:
             tmp = pd.concat([heatwaves[i][model][x] for x in heatwaves[i][model]])
             tmp_all.append(tmp)
@@ -495,7 +554,7 @@ for case in case_data:
         time_frame = cathegories.index.min()
         while(time_frame < cathegories.index.max()-frame_size):
             tmp = cathegories[cathegories.index < time_frame + frame_size]
-            tmp = cathegories[cathegories.index > time_frame]
+            tmp = tmp[tmp.index > time_frame]
             occurences = Counter(tmp['cathegory'])
             cath_names = [x for x in list(occurences.keys()) if not np.isnan(x)]
             cath_names.sort()
@@ -506,14 +565,27 @@ for case in case_data:
                     
             for o in cath_names:
                 if(occurences[o]>1):
-                    tmp_shift = dt.timedelta(30*12)*o
-                    plt.fill_between([time_frame+tmp_shift+shift,\
-                                      time_frame+tmp_shift+shift+dt.timedelta(90)],\
-                             [occurences[o]/(total_hw)]*2,\
-                             linewidth = 1, color = c)
-                    plt.text(time_frame+tmp_shift+shift, occurences[o]/total_hw,\
+                    tmp_shift = (dt.timedelta(shift_plus*2.0))*o
+                    bar_time = time_frame + \
+                                +tmp_shift+shift
+                    tmp_line = plt.fill_between([bar_time,\
+                                      bar_time + dt.timedelta(shift_plus*bar_width)],\
+                             [100.0*occurences[o]/(total_hw)]*2,\
+                             linewidth = 0, color = c)
+                    plt.text(time_frame+tmp_shift+shift+dt.timedelta(75), 1.5+100.0*occurences[o]/total_hw,\
                              "{:0.0f}".format(o), horizontalalignment='center')
             time_frame += frame_size
         shift += dt.timedelta(shift_plus)
+        lines.append(tmp_line)
+    plt.ylim(0,100)
+    plt.grid()
+    plt.ylabel("percentage of cathegory")
+    plt.xlabel("Time (10 year averages)")
+    plt.legend(lines, ["reference run", "RCP 4.5", "RCP 8.5"], loc ='upper right')
+    out_filename = "{}_{}_Cathegories.png".format(\
+                accepted_dates, re.sub('\s','_',case))
+    plt.savefig(out_dir+out_filename, dpi = 300, bbox_inches='tight')
+    print("saved: {} {}".format(out_dir, out_filename))
+    
                     
                     

@@ -30,20 +30,23 @@ all_variables = {"Temperature_monthly":"votemper",\
                  "SSS":"SSS",
                  "SBS":"SBS",
                  "SST":"SST",
-                 "SBT":"votemper"
+                 "SBT":"votemper",
+                 "ICE_C":"icecon"
                  }
 
 color_maps = {"Temperature_monthly":cmo.cm.thermal,\
               "Salinity_monthly":cmo.cm.haline,
              "SSS":cmo.cm.haline,
              "SBS":cmo.cm.haline,
-             "SST":cmo.cm.thermal
+             "SST":cmo.cm.thermal,
+             "ICE_C":cmo.cm.ice
               }
 
 shown_units = {"SSS":"-",
                "SBS":"-",
                "SST":"°C",
-               "SBT":"°C"}
+               "SBT":"°C",
+               "ICE_C":""}
 
 fig_dpi = 300
 close_figures = True  # set to True to keep figures open.
@@ -59,7 +62,7 @@ plot_bathymetry = False
 plot_bathy_contours = True
 plot_yearly_average = True
 plot_daily_figures = True
-comparison = True   # This one is set depending on do 
+comparison = False   # This one is set depending on do 
                     # the setup give name for another dataset
 comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
 #comparison_climatology = None
@@ -88,7 +91,7 @@ the_proj = ccrs.PlateCarree()
 #serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 #serie_types = [ "SBT_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
 #serie_types = [ "SST_1vsABD1_diff_test"]
-serie_types = [ "SST_1"]
+serie_types = [ "ICE_C_5", "ICE_C_2"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -302,6 +305,9 @@ for serie_type in serie_types:
                         "JJA":slice(152,244),
                         "SON":slice(245,336)}
             day_filters0 = day_filters.copy() 
+            lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
+            lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
+            lon,lat = np.meshgrid(lon,lat)
             for i in day_filters:
                 fig = create_main_map(the_proj)
                 if(comparison):
@@ -427,12 +433,15 @@ for serie_type in serie_types:
                 plt.pcolor(lon,lat,d-d0,transform = the_proj, cmap = color_map, \
                            vmin = var_lims[0], vmax = var_lims[1])
                 cb=plt.colorbar()
-                cb.set_label('Difference')
-                plt.title("{} Diff, day: {:03d} \n {}-{}".format(var_name,time_step,file,file0))
                 if(comparison):
+                    cb.set_label('Difference')
+                    plt.title("{} Diff, day: {:03d} \n {}-{}".format(var_name,time_step,file,file0))
                     filename = "{}_{}vs{}_{:03d}.png".format(var,set_name,set_name0,time_step)
                 else:
+                    cb.set_label('{}'.format(var_name))
+                    plt.title("{}, day: {:03d} \n {}-{}".format(var_name,time_step,file,file0))
                     filename = "{}_{}_{:03d}.png".format(var,set_name,time_step)
+                    
                     
                 plt.savefig(output_dir+output_dir_plus+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')

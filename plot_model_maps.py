@@ -102,7 +102,7 @@ shown_units = {"SSS":"-",
                }
 
 fig_dpi = 300
-close_figures = True  # set to True to keep figures open.
+close_figures = True  # set to False to keep figures open.
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
 mod_min_lon = 16.40257
@@ -112,12 +112,25 @@ mod_shape_lon = 340
 
 plot_bathymetry = False
 plot_bathy_contours = True
-plot_daily_figures = True
+plot_daily_figures = False
 comparison = False   # This one is set depending on do 
                     # the setup give name for another dataset
 #comparison_climatology = None
 specific_depth = 0.0    # set target depth in meters. 0.0 is ignored. 
                         # Note: this does something only on SBT or SBS.
+
+# Plot Empty map is for plotting some measuring points etc in the same format than rest of the figures.
+plot_empty_map = False
+tmp_col = '#a00000'
+points_to_plot = {"F16":[63.52,21.10,tmp_col],"BO5":[64.19, 22.90,tmp_col],
+                  "BO3":[64.31,22.35,tmp_col], "F9":[64.71, 22.07,tmp_col],
+                  "F3":[65.17, 23.24,tmp_col] }
+tmp_col = '#00a000'
+#F64", "SR5", "MS4", "C3", "US5B" 
+points_to_plot.update( {"F64":[60.19,19.15,tmp_col],"SR5":[61.09, 19.60,tmp_col],
+                  "MS4":[62.09,18.54,tmp_col], "C3":[62.66, 18.96,tmp_col],
+                  "US5B":[62.59, 19.99,tmp_col] })
+
 
 the_proj = ccrs.PlateCarree()
 years = list(range(1978,1984+1))
@@ -176,6 +189,34 @@ for the_year in years:
         os.mkdir(output_dir+output_dir_plus)
     except:
         pass
+    if(plot_empty_map):
+            fig = create_main_map(the_proj)             
+            cb=plt.colorbar()
+            cb.set_ticks([0.0,0.5,1.0],True)  # just to get similar numbers
+                                              # than comparable filled plot
+                                              # to keep same aspects
+            cb.set_label("none")
+            plt.title("Empty \n measuring points")
+            for p in points_to_plot:
+                p_x = [points_to_plot[p][1]]
+                p_y = [points_to_plot[p][0]]
+                p_name = p
+                p_color = points_to_plot[p][2]
+                plt.plot(p_x,p_y, 
+                         marker = '.', color = p_color, markersize = 20,\
+                         transform = the_proj)
+
+
+            filename = "empty_{}_{}.png".format(var,set_name)
+            plt.savefig(output_dir+output_dir_plus+filename,\
+                            facecolor='w',dpi=fig_dpi,bbox_inches='tight')
+            print("Saved: {}, from {} ".format(\
+                  output_dir+output_dir_plus+filename,
+                  file))
+            if(close_figures):
+                plt.close()
+            plot_empty_map = False
+        
     if(plot_daily_figures):
         for time_step in range(365):
             #First let's plot the general map:

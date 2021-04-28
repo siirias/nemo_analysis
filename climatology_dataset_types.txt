@@ -214,6 +214,48 @@ var = all_variables[var_name]
 
 
 ### NON COMPARISONS, JUST DATA
+#SET ICE_C_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_2
+file0 = ""
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\2\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_5
+file0 = ""
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\5\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+
+
+
+
 #SET SST_1
 file0 = ""
 file = "daily_average_{}001.nc".format(data_set)
