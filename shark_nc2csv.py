@@ -20,8 +20,9 @@ from netCDF4 import Dataset
 from smartseahelper import smh
 import os
 import re
-csv_header = "Cruise,Station,Type,yyyy-mm-ddThh:mm,Latitude [degrees_north],Longitude [degrees_east],Bot. Depth [m],Secchi Depth [m]:METAVAR:FLOAT,PRES [db],TEMP [deg C],PSAL [psu],DOXY [ml/l],PHOS [umol/l],TPHS [umol/l],SLCA [umol/l],NTRA [umol/l],NTRI [umol/l],AMON [umol/l],NTOT [umol/l],PHPH [],ALKY [meq/l],CPHL [ug/l]"
-set_names = ['A001','A002','A005','B001','B002','B005','D002','D005']
+csv_header = "Cruise,Station,Type,yyyy-mm-ddThh:mm,Latitude [degrees_north],Longitude [degrees_east],Bot. Depth [m],Secchi Depth [m]:METAVAR:FLOAT,PRES [db],TEMP [deg C],PSAL [psu],DOXY [ml/l],PHOS [umol/l],TPHS [umol/l],SLCA [umol/l],NTRA [umol/l],NTRI [umol/l],AMON [umol/l],NTOT [umol/l],PHPH [],ALKY [meq/l],CPHL [ug/l],bn2, bn2S, bn2T"
+#set_names = ['A001','A002','A005','B001','B002','B005','D002','D005']
+set_names = ['A001','B001','D001']
 for set_name in set_names:
     data_dir= "/scratch/project_2002540/siiriasi/smartsea_data/{}/".format(set_name)
     out_dir = "/scratch/project_2002540/siiriasi/smartsea_data/converted_csv/"
@@ -29,7 +30,7 @@ for set_name in set_names:
 #    out_dir = "D:\\Data\\SmartSeaModeling\\converted_csv\\"
 
     csv_format = \
-    "Nemo,X,{},{:},{:4.2f},{:4.2f},{:4.2f},,{:4.2f},{:4.2f},{:4.2f},{:4.2f},,,,,,,,,,,\n"
+    "Nemo,X,{},{:},{:4.2f},{:4.2f},{:4.2f},,{:4.2f},{:4.2f},{:4.2f},{:4.2f},,,,,,,,,,,{:2.4E},{:2.4E},{:2.4E}\n"
     #csv_header = csv_header.split(',')
     files = os.listdir(data_dir)
     dat={}
@@ -52,6 +53,9 @@ for set_name in set_names:
                 temperature = D['votemper'][:]
                 salinity = D['vosaline'][:]
                 oxy = D['oxygen'][:]
+                bn2 = D['bn2'][:]
+                bn2S = D['bn2S'][:]
+                bn2T = D['bn2T'][:]
                 time_stamp = netCDF4.num2date(D['time_counter'][:],\
                                               D['time_counter'].units)
                 time_stamp = list(map(date_to_csv_format,time_stamp))
@@ -63,7 +67,10 @@ for set_name in set_names:
                                    'votemper':temperature,
                                    'vosaline':salinity,
                                    'oxygen':oxy,
-                                   'csv_filename':csv_filename
+                                   'csv_filename':csv_filename,
+                                   'bn2':bn2,
+                                   'bn2S':bn2S,
+                                   'bn2T':bn2T
                                    }
     for d_ind in dat:
         d = dat[d_ind]
@@ -95,6 +102,10 @@ for set_name in set_names:
                                        float(d['votemper'][profile][depth]),
                                        float(d['vosaline'][profile][depth]),
                                        float(d['oxygen'][profile][depth]),
+                                       float(d['bn2'][profile][depth]),
+                                       float(d['bn2S'][profile][depth]),
+                                       float(d['bn2T'][profile][depth])
+                                       
                                        ))
             if(warnings_on_file>0):
                 print("warning: {}".format(warnings_on_file))

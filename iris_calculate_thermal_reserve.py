@@ -37,7 +37,7 @@ ss.root_data_out = "/scratch/project_2002540/siiriasi/smartsea_data/"
 #name_markers = ['new_REANALYSIS','REANALYSIS_SMHI','REANALYSIS']
 #name_markers = ['B001','B002','B005','D002','D005']
 #name_markers = ['REANALYSIS']
-name_markers = ['A001','B001','D001']
+name_markers = ['D001']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
@@ -48,8 +48,8 @@ for name_marker in name_markers:
     folder_start = ''
     ss.save_interval = 'year'
     ss.file_name_format = 'NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
-    if 'D' in name_marker or 'C' in name_marker:
-        ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
+#    if 'D' in name_marker or 'C' in name_marker:
+#        ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
     if '1' in name_marker: # the 001 series are hindcasts, all other scenarios
         startdate = datetime.datetime(1975, 1, 1)
         enddate = datetime.datetime(2005, 12, 31)
