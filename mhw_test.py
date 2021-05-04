@@ -24,13 +24,12 @@ from smartseahelper import smh
 from collections import Counter # Needed for the histogram stuff
 
 
-output_dir = "D:\\Data\\Figures\\SmartSea\\mhw\\"
 data_dir = "E:\\SmartSea\\all_shark_files\\"  
 out_dir = "D:\\Data\\figures\\smartsea\\MHW\\"
 
 
 plot_figures = False
-recalculate = False
+recalculate = True
 
 datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
             {'n':'B','ref':"B001", '4.5':"B002", '8.5':"B005"},\
@@ -537,7 +536,7 @@ for case in case_data:
     print("saved: {} {}".format(out_dir, out_filename))
     
     # show the amount of cathegories
-    shift_plus = 30*15
+    shift_plus = 30*13
     bar_width = 0.8
     lines = [] # used to mark the ones to label
     fig = plt.figure(figsize=(12,4))
