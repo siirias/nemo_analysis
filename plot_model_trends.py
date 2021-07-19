@@ -22,9 +22,9 @@ register_matplotlib_converters()
 
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
-sm.root_data_in = "E:\\SmartSea\\new_dataset\\"
+sm.root_data_in = "F:\\SmartSea\\new_dataset\\"
 #sm.root_data_in = "D:\\Data\\svnfmi_merimallit\\smartsea\\"
-out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\"
+out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\test\\"
 fig_factor = 0.8 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
@@ -36,11 +36,11 @@ content_types = {"analyze_salt_content":True,\
 analyze_profiles = True
 #profile_types = ["vosaline", "votemper"]
 profile_types = ["vosaline"]
-analyze_salt_trends = True
-analyze_sbs_changes = True
+analyze_salt_trends = False
+analyze_sbs_changes = False
 
 plot_single_models = True
-plot_combinations = False
+plot_combinations = True
 
 
 plot_original = False
@@ -59,8 +59,8 @@ ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
-#period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
 
 if(period['min'] >= dt.datetime(2006,1,1)):
     drop_hindcast = True

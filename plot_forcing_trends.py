@@ -16,8 +16,8 @@ import smartseahelper
 sm = smartseahelper.smh()
 
 
-output_dir = "D:\\Data\\Figures\\SmartSea\\Forcings\\"
-main_data_dir = "D:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
+output_dir = "C:\\Data\\Figures\\SmartSea\\Forcings\\"
+main_data_dir = "C:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
 
 fig_factor = 0.8  #1.5
 #fig_size = (10*fig_factor,5*fig_factor)
@@ -31,9 +31,9 @@ plot_single_models = False
 plot_combinations = True
 
 plot_trends = True
-plot_smoothed = False
-plot_yearly_mean = True
-plot_original = True
+plot_smoothed = True
+plot_yearly_mean = False
+plot_original = False
 plot_cloud = False
 plot_scatter = True
 show_grid = True
@@ -78,8 +78,11 @@ if analyze_inflow:
     #calculate the means for History, RCP4.5 and RCP8.5
     if(plot_combinations):
         dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+        dat["Control"].sort_index(inplace = True)
         dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+        dat["RCP45"].sort_index(inplace = True)
         dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+        dat["RCP85"].sort_index(inplace = True)
         if(not plot_single_models): # remove the A,B,D thingies from the list
             for i in list(dat.keys()):
                 if(i.startswith('A') or i.startswith('B') or i.startswith('D')):
@@ -199,7 +202,7 @@ if analyze_inflow:
                 period['min'].year,period['max'].year,\
                 extra),dpi = fig_dpi)
     
-print(pd.DataFrame(inflow_numbers,columns=['set','mean','trend','std']).to_latex())
+    print(pd.DataFrame(inflow_numbers,columns=['set','mean','trend','std']).to_latex())
 
 if analyze_boundary:
 #    data_dir ='D:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\boundaryjusthistory\\'
@@ -219,21 +222,35 @@ if analyze_boundary:
                 yearly_means_bnds[set_name]={}
             yearly_means_bnds[set_name][subset] = \
                 dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
+        #calculate the means for History, RCP4.5 and RCP8.5
+        if(plot_combinations):
+            dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+            dat["Control"].sort_index(inplace = True)
+            dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+            dat["RCP45"].sort_index(inplace = True)
+            dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+            dat["RCP85"].sort_index(inplace = True)
+            if(not plot_single_models): # remove the A,B,D thingies from the list
+                for i in list(dat.keys()):
+                    if(i.startswith('A') or i.startswith('B') or i.startswith('D')):
+                        dat.pop(i)
+
         plt.figure(figsize=fig_size)
         plt.title("Boundary Salinity, {}".format(subset))
         for s in dat:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
-            plt.plot(d.index,d[b_val], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
+            if(plot_original):
+                plt.plot(d.index,d[b_val], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
     
             smooth_window = 366*2
             smoothed = d[b_val].ewm(span = smooth_window, min_periods=smooth_window).mean()
-            plt.plot(d.index,smoothed, zorder=15,label='_nolegend_',**sm.set_style(s))
-
+#           plt.plot(d.index,smoothed, zorder=15,label='_nolegend_',**sm.set_style(s))
             fitting_time = mp.dates.date2num(d.index)
             fitting = np.polyfit(fitting_time,d[b_val],1)
             print("{} {} change: {:.3} (g/g)/year".format(s,subset,fitting[0]*365.15))
-            plt.plot(d.index,smoothed,label=s, zorder=15,**sm.set_style(s))
+            if(plot_smoothed):
+                plt.plot(d.index,smoothed,label=s, zorder=15,**sm.set_style(s))
             if(plot_trends):
                 plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**sm.set_style(s,0.5))
 
