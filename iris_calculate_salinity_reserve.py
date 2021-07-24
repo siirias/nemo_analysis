@@ -13,6 +13,7 @@ import numpy as np
 from scipy.io import netcdf
 from smartseahelper import smh
 import os
+import sys
 import cmocean
 import pandas as pd
 import iris
@@ -38,7 +39,10 @@ ss.root_data_out = "/scratch/project_2002540/siiriasi/smartsea_data/"
 #name_markers = ['D001','C001','D002', 'D005', 'C002']
 #name_markers = ['A001','A002', 'A005']
 #name_markers = ['REANALYSIS']
-name_markers = ['D001']
+name_markers = ['B002', 'D002', 'A005', 'B005', 'D005']
+if(len(sys.argv)>1):
+    name_markers = sys.argv[1:]
+print(name_markers)
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
@@ -69,7 +73,7 @@ for name_marker in name_markers:
             
     else:
         startdate = datetime.datetime(2006, 1, 1)
-        enddate = datetime.datetime(2058, 12, 31)
+        enddate = datetime.datetime(2099, 12, 31)
     datadir = ss.root_data_out+"/derived_data/figure_data/" # where everyt output is stored
     
     ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start, name_marker)

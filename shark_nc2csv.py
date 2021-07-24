@@ -22,7 +22,7 @@ import os
 import re
 csv_header = "Cruise,Station,Type,yyyy-mm-ddThh:mm,Latitude [degrees_north],Longitude [degrees_east],Bot. Depth [m],Secchi Depth [m]:METAVAR:FLOAT,PRES [db],TEMP [deg C],PSAL [psu],DOXY [ml/l],PHOS [umol/l],TPHS [umol/l],SLCA [umol/l],NTRA [umol/l],NTRI [umol/l],AMON [umol/l],NTOT [umol/l],PHPH [],ALKY [meq/l],CPHL [ug/l],bn2, bn2S, bn2T"
 #set_names = ['A001','A002','A005','B001','B002','B005','D002','D005']
-set_names = ['A001','B001','D001']
+set_names = ['B005','D005']
 for set_name in set_names:
     data_dir= "/scratch/project_2002540/siiriasi/smartsea_data/{}/".format(set_name)
     out_dir = "/scratch/project_2002540/siiriasi/smartsea_data/converted_csv/"

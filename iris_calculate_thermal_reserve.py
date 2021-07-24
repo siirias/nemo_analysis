@@ -13,6 +13,7 @@ import numpy as np
 from scipy.io import netcdf
 from smartseahelper import smh
 import os
+import sys
 import cmocean
 import pandas as pd
 import iris
@@ -38,6 +39,9 @@ ss.root_data_out = "/scratch/project_2002540/siiriasi/smartsea_data/"
 #name_markers = ['B001','B002','B005','D002','D005']
 #name_markers = ['REANALYSIS']
 name_markers = ['D001']
+if(len(sys.argv)>1):
+    name_markers = sys.argv[1:]
+print(name_markers)
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    

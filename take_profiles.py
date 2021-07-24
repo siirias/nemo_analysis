@@ -31,6 +31,7 @@ ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"
 #name_markers=['A001','B001','D001','A002','A005','B002','B005']
 #name_markers=['REANALYSIS']
 name_markers=['A001','B001','D001']
+#name_markers=['A002','A005','B002','B005','D002','D005']
 #variables=['votemper','vosaline','SSH_inst','SST','SSS']
 variables=['vosaline','votemper']
 dataset_to_substract = ''    
@@ -110,8 +111,12 @@ for name_marker in name_markers:
             data=Dataset(ss.main_data_folder+f)
             d=data.variables[var1][:]
             d=np.ma.masked_where(d==0.0,d)
-            lons = data.variables['nav_lon'][:]
-            lats = data.variables['nav_lat'][:]
+            if('nav_lon' in data.variables.keys()):
+                lons = data.variables['nav_lon'][:]
+                lats = data.variables['nav_lat'][:]
+            else:
+                lons = data.variables['nav_lon_grid_T'][:]
+                lats = data.variables['nav_lat_grid_T'][:]
             lats,lons=ss.fix_latslons(lats,lons)
             times=data.variables['time_counter'][:].data
             if ( depth_ax in data.dimensions.keys() ):
