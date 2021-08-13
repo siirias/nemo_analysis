@@ -16,7 +16,7 @@ import smartseahelper
 sm = smartseahelper.smh()
 
 
-output_dir = "C:\\Data\\Figures\\SmartSea\\Forcings\\"
+output_dir = "C:\\Data\\Figures\\SmartSeaNEW\\Forcings\\"
 main_data_dir = "C:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
 
 fig_factor = 0.8  #1.5
@@ -27,22 +27,22 @@ analyze_inflow = True
 analyze_atmosphere = True
 analyze_boundary = True
 
-plot_single_models = False
-plot_combinations = True
+plot_single_models = True
+plot_combinations = not plot_single_models
 
 plot_trends = True
-plot_smoothed = True
-plot_yearly_mean = False
+plot_smoothed = False
+plot_yearly_mean = True
 plot_original = False
 plot_cloud = False
 plot_scatter = True
 show_grid = True
 fix_inflow_ylims = False # (100,350)# False
-show_trends_in_Legend = False
+show_trends_in_Legend = True
 
 b_val = 'vosaline' # 'avg_temp'
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
-period={'min':dt.datetime(1976,1,1), 'max':dt.datetime(2060,1,1)}
+period={'min':dt.datetime(1976,1,1), 'max':dt.datetime(2100,1,1)}
 change_time = dt.datetime(2006,1,1) # used to cut the forecasts before this
    
 plot_shift = dt.timedelta(5*365)  # how much decadal errorbars are shifted to middle of the decade
@@ -67,7 +67,7 @@ if analyze_inflow:
                                 1000000\
                                 *60*60*24*365\
                                 *0.0001*0.0001*0.0001  
-                                #fixes one eror in csv crations, then
+                                #fixes one eror in csv creations, then
                                 # changes unit from kg per second
                                 # into km^3/year
         dat[set_name]=dat[set_name].set_index('time')
@@ -109,12 +109,13 @@ if analyze_inflow:
         smoothed = d[variable].ewm(span = smooth_window,min_periods=smooth_window).mean()
         fitting_time = mp.dates.date2num(d.index)
         fitting = np.polyfit(fitting_time,d[variable],1)
-        print("{} change: {:.3} km^3/yr".format(s,fitting[0]*365.15))
+        print("{} change: {:.3} {}".format(s,fitting[0]*365.15,r'$km^3yr^{-1}$'))
         s_temp = s
         if(s == 'hindcast'):
             s_temp = 'Hindcast'
         if(show_trends_in_Legend):
-            label_text = "{}:{:0.3} km^3/yr".format(s_temp,fitting[0]*365.15)
+            label_text = "{}:{:0.3}".format(s_temp,fitting[0]*365.15)
+            label_text += r"$km^3yr^{-1}$"
         else:
             label_text = "{}".format(s_temp)
 
@@ -190,17 +191,19 @@ if analyze_inflow:
         plt.ylim(*fix_inflow_ylims)
     plt.xlim([period['min'],period['max']])
     plt.xlabel('Year')
-    plt.ylabel('Average km^3 Yearly inflow')
+    plt.ylabel('Average $km^3year^{-1}$ inflow')
     if(show_grid):
         plt.grid('on')
     plt.legend()
     extra = ""
     if(plot_combinations):
         extra+="comb"
-    plt.savefig(output_dir+"inflow_{}_{}-{}{}.png".format(\
+    out_file_name = "inflow_{}_{}-{}{}.png".format(\
                 set_name,\
                 period['min'].year,period['max'].year,\
-                extra),dpi = fig_dpi)
+                extra)
+    plt.savefig(output_dir + out_file_name,dpi = fig_dpi)
+    print("Saved {} {}".format(output_dir, out_file_name))
     
     print(pd.DataFrame(inflow_numbers,columns=['set','mean','trend','std']).to_latex())
 
@@ -209,7 +212,9 @@ if analyze_boundary:
     data_dir = main_data_dir + '\\boundary\\'
 #    for subset in ['boundary_mean','5meter','20meter','80meter','120meter']:
     yearly_means_bnds = {}
+    variable = 'vosaline'
     for subset in ['boundary_mean','5meter','80meter']:
+        boundary_numbers = []
         files = os.listdir(data_dir)
         files = [f for f in files if subset in f]
         dat={}
@@ -237,9 +242,27 @@ if analyze_boundary:
 
         plt.figure(figsize=fig_size)
         plt.title("Boundary Salinity, {}".format(subset))
+        extra_shift = -extra_shift_step*3.0  # used to shift whisker plots a bit
         for s in dat:
-            d=dat[s]
+            d=dat[s]            
             d = d[(d.index>period['min']) & (d.index<period['max'])]
+            if(s == 'hindcast'): # this to cut hindcast in similar shape than control
+                d = d[(d.index>period['min']) & (d.index<change_time)]
+            # calculate statistics for the scatter plot
+            d_tmp = d.groupby(pd.Grouper(freq='1AS')).mean()
+            mean = d_tmp.groupby(pd.Grouper(freq='10AS')).mean()
+            median = d_tmp.groupby(pd.Grouper(freq='10AS')).median()
+            std = d_tmp.groupby(pd.Grouper(freq='10AS')).std()
+            maximum = d_tmp.groupby(pd.Grouper(freq='10AS')).max()
+            minimum = d_tmp.groupby(pd.Grouper(freq='10AS')).min()
+            quant_min = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.75)
+            quant_max = d_tmp.groupby(pd.Grouper(freq='10AS')).quantile(0.25)
+            print("Mean std for {}: {}".format(s,std.mean()))
+            
+            s_temp = s
+            if(s == 'hindcast'):
+                s_temp = 'Hindcast'
+
             if(plot_original):
                 plt.plot(d.index,d[b_val], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
     
@@ -248,14 +271,58 @@ if analyze_boundary:
 #           plt.plot(d.index,smoothed, zorder=15,label='_nolegend_',**sm.set_style(s))
             fitting_time = mp.dates.date2num(d.index)
             fitting = np.polyfit(fitting_time,d[b_val],1)
-            print("{} {} change: {:.3} (g/g)/year".format(s,subset,fitting[0]*365.15))
+            print("{} {} change: {:.3f} (g/kg)/year".format(s,subset,fitting[0]*365.15))
+            if(show_trends_in_Legend):
+                label_text = "{}:{:0.3f}".format(s_temp,fitting[0]*365.15)
+                label_text += " $g$ $kg^{-1}/yr$"
+            else:
+                label_text = "{}".format(s_temp)
             if(plot_smoothed):
                 plt.plot(d.index,smoothed,label=s, zorder=15,**sm.set_style(s))
             if(plot_trends):
                 plt.plot(mp.dates.num2date(fitting_time),fitting[0]*fitting_time+fitting[1],label='_nolegend_', zorder=15,**sm.set_style(s,0.5))
-
-        plt.ylim([4.0,9.0])
+            if(plot_scatter):
+                plot_shift_plus = plot_shift + extra_shift
+                scatter_style = sm.set_style(s)
+                scatter_style['marker'] = 'D'
+                scatter_style['s'] = scatter_style['linewidth']*30
+                scatter_style['linewidth'] = 0.0
+                plt.scatter(median.index+plot_shift_plus,median[variable], \
+                            label=label_text, zorder=16,**scatter_style)
+                label_text = None # to prevent plotting the label more than once
+                scatter_style.pop('s')
+                scatter_style['marker'] = ''
+                scatter_style['linestyle'] = ' '
+                scatter_style['elinewidth'] = 3
+    #                    scatter_style['capsize'] = 5
+                
+                minmax = np.vstack((mean[variable]-quant_max[variable],\
+                                    quant_min[variable]- mean[variable]))
+                plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                             yerr = minmax,\
+                            label=label_text, zorder=16,**scatter_style)
+    
+                minmax = np.vstack((mean[variable]-minimum[variable],\
+                                    maximum[variable]- mean[variable]))
+                scatter_style['elinewidth'] = 1
+                scatter_style['capsize'] = 3
+                plt.errorbar(median.index+plot_shift_plus,mean[variable], \
+                             yerr = minmax,\
+                            label=label_text, zorder=16,**scatter_style)
+                extra_shift += extra_shift_step
+            if(plot_yearly_mean):
+                mean_style = sm.set_style(s)
+                mean_style['alpha'] = 0.15
+                plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
+                label_text = None # to prevent plotting the label more than once
+            boundary_numbers.append([s,float(mean.mean()),fitting[0]*365.15,float(std.mean())])
+        plt.ylim([5.5,7.5])
+        if(show_grid):
+            plt.grid('on')
         plt.legend()
-        plt.savefig(output_dir+"boundary_{}_{}_{}-{}.png".format(\
-                    subset,set_name,period['min'].year,period['max'].year),dpi = fig_dpi)
+        final_filename = "boundary_{}_{}_{}-{}.png".format(\
+                    subset,set_name,period['min'].year,period['max'].year)
+        plt.savefig(output_dir + final_filename,dpi = fig_dpi)
+        print("saved: {}{}".format(output_dir, final_filename))
+        print(pd.DataFrame(boundary_numbers,columns=['set','mean','trend','std']).to_latex())
     

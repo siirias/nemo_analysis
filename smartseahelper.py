@@ -9,6 +9,7 @@ import calendar
 import numpy as np
 import os
 import re
+import pandas as pd
 class smh:
     # 1:d/h 2:startdate 3:enddate 4:grid type (T)
     #date format YYYYMMDD .strftime("%Y%m%d")
@@ -218,14 +219,49 @@ class smh:
         marker = ''
         if(scenario == 'rcp85'):
             line_width=2.0
-        print(set_name,scenario)
-        print(model_type,scenario)
+#        print(set_name,scenario)
+#        print(model_type,scenario)
         return {'color':colors[model_type],
                 'linestyle':scen_styles[scenario],
                 'linewidth':line_width,
                 'alpha':alpha,
                 'marker':marker}
-        
+
+    def load_boundary_data(self, period = None):
+        boundary_data = {}
+        change_time = dt.datetime(2006,1,1) # used to cut the forecasts before this
+        if(not period): #default period
+            period={'min':dt.datetime(1976,1,1), 'max':dt.datetime(2100,1,1)}
+        data_dir = self.root_data_in + '\\derived_data\\boundary\\'
+    #    for subset in ['boundary_mean','5meter','20meter','80meter','120meter']:
+        yearly_means_bnds = {}
+        for subset in ['boundary_mean','5meter','80meter']:
+            files = os.listdir(data_dir)
+            files = [f for f in files if subset in f]
+            dat={}
+            for f in files:
+                set_name=re.search('_([^_]*)\.csv',f).groups()[0]
+                dat[set_name]=pd.read_csv(data_dir+f,\
+                                     parse_dates=[0])
+                dat[set_name]=dat[set_name].set_index('time')
+                if(not set_name in yearly_means_bnds.keys()):
+                    yearly_means_bnds[set_name]={}
+                yearly_means_bnds[set_name][subset] = \
+                    dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
+            #calculate the means for History, RCP4.5 and RCP8.5
+            dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+            dat["Control"].sort_index(inplace = True)
+            dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+            dat["RCP45"].sort_index(inplace = True)
+            dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+            dat["RCP85"].sort_index(inplace = True)
+            for s in dat:
+                d=dat[s]            
+                d = d[(d.index>period['min']) & (d.index<period['max'])]
+                if(s == 'hindcast'): # this to cut hindcast in similar shape than control
+                    d = d[(d.index>period['min']) & (d.index<change_time)]
+            boundary_data[subset] = dat.copy()
+        return boundary_data
         
         
         

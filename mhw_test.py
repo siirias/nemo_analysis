@@ -24,7 +24,7 @@ from smartseahelper import smh
 from collections import Counter # Needed for the histogram stuff
 
 
-data_dir = "E:\\SmartSea\\all_shark_files\\"  
+data_dir = "F:\\SmartSea\\all_shark_files\\"  
 out_dir = "D:\\Data\\figures\\smartsea\\MHW\\"
 
 

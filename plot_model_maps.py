@@ -59,10 +59,10 @@ def create_main_map(the_proj):
                 cb.set_label('Depth (m)')
         return fig
 
-output_dir = "D:\\Data\\Figures\\SmartSea\\new_run\\"
+output_dir = "C:\\Data\\Figures\\SmartSea\\new_run\\"
 output_dir_plus = ""
-data_dir = "E:\\SmartSea\\new_dataset\\A001\\"  
-data_dir0 = "E:\\SmartSea\\Final\\SmartSea_NEMO_A001\\A001\\"  
+data_dir = "D:\\SmartSea\\new_dataset\\A001\\"  
+data_dir0 = "D:\\SmartSea\\Final\\SmartSea_NEMO_A001\\A001\\"  
 bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 all_variables = {"Temperature_monthly":"votemper",\
@@ -111,8 +111,8 @@ mod_shape_lat = 360
 mod_shape_lon = 340
 
 plot_bathymetry = False
-plot_bathy_contours = True
-plot_daily_figures = False
+plot_bathy_contours = False
+plot_daily_figures = True
 comparison = False   # This one is set depending on do 
                     # the setup give name for another dataset
 #comparison_climatology = None
@@ -141,13 +141,13 @@ for the_year in years:
     name_num_plus = 365*offset
     offset+=1
 #    output_dir_plus = "\\test_diff\\"
-    output_dir_plus = "\\ice\\"
+    output_dir_plus = "\\SBS_nocont\\"
     set_name = "A001"
     set_name0 = "A001_old"
 #    var_lims=[-2.0,2.0]
-    var_lims=[0.0,1.0]
+    var_lims=[0.0,7.0]
 #    var_lims=[0.0,80.0]
-    var_name = "ICE_V"
+    var_name = "SBS"
     var = all_variables[var_name]
     if(comparison):
         color_map = cmo.cm.diff

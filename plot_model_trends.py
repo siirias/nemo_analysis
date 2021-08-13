@@ -22,10 +22,11 @@ register_matplotlib_converters()
 
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
-sm.root_data_in = "F:\\SmartSea\\new_dataset\\"
+sm.root_data_in = "D:\\SmartSea\\new_dataset\\"
+sm.root_data_out = "C:\\Data\\"
 #sm.root_data_in = "D:\\Data\\svnfmi_merimallit\\smartsea\\"
 out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\test\\"
-fig_factor = 0.8 #0.8  #1.5
+fig_factor = 1.5 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
 #analyze_heat_content = True
@@ -35,12 +36,12 @@ content_types = {"analyze_salt_content":True,\
 
 analyze_profiles = True
 #profile_types = ["vosaline", "votemper"]
-profile_types = ["vosaline"]
+profile_types = ["votemper"]
 analyze_salt_trends = False
 analyze_sbs_changes = False
 
 plot_single_models = True
-plot_combinations = True
+plot_combinations = not plot_single_models
 
 
 plot_original = False
@@ -58,8 +59,9 @@ create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
-period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
+#period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
 
 if(period['min'] >= dt.datetime(2006,1,1)):
@@ -177,8 +179,8 @@ for a in content_types:
                 smoothed = d[variable].ewm(span = smooth_window,min_periods=smooth_window).mean()
                 fitting_time = mp.dates.date2num(d.index)
                 fitting = np.polyfit(fitting_time,d[variable],1)
-                print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
-                label_text = "{}:{:0.3} unit/year".format(s,fitting[0]*365.15)
+                print("{} change: {:.3} GT/year".format(s,fitting[0]*365.15))
+                label_text = "{}:{:0.3} GT/year".format(s,fitting[0]*365.15)
                 if(plot_smoothed):
                     plt.plot(d.index,smoothed,label=label_text, zorder=15,**sm.set_style(s))
                     label_text = None # to prevent plotting the label more than once
@@ -322,6 +324,11 @@ if analyze_profiles:
                         depth = min(depth,max_depth)
                         depth_layer = np.abs(np.array(depths)-depth).argmin()
                         times = netCDF4.num2date(times[:],times.units)
+                        # upper gives cftime, convert to datetime
+                        times = map(\
+                                    lambda x: \
+                                        dt.datetime.strptime(str(x),x.format),\
+                                        times)
                         dat[set_name] = pd.DataFrame({'time':times,\
                                        variable:values[:,depth_layer],\
                                        'lat':lat,
@@ -477,13 +484,15 @@ if analyze_profiles:
                             max_val = gathered_profile_trends.max(point,depth,fil)
                             min_val = gathered_profile_trends.min(point,depth,fil)
                             lat = gathered_profile_trends.data[point]['lat']
-                            lon = gathered_profile_trends.data[point]['lon']
+                            lon = gathered_profile_trends.data[point]['lon']                            
                             print(\
                             "{}, {} m {}: mean {:0.3f} (min {:0.3f}, max {:0.3f})".format(\
                              point, depth_f, tag,  mean_val, min_val, max_val))
                             out_f.write("{}\t{:0.2f}\t{:0.2f}\t{}\t{}\t{:0.3f}\t{:0.03f}\t{:0.03f}\n".format(\
                                       point, lat, lon, depth_f, tag, \
                                       mean_val, min_val, max_val))
+        print(pd.read_csv(trend_file_name,'\t')\
+              .to_latex(caption = variable_name, index = False))
 
 #
 #

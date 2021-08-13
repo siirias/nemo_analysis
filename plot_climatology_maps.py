@@ -19,11 +19,11 @@ import xarray as xr
 import cmocean as cmo
 from smartseahelper import smh
 
-output_dir = "D:\\Data\\Figures\\SmartSea\\"
+output_dir = "C:\\Data\\Figures\\SmartSea\\"
 output_dir_plus = ""
-measurement_dir = "D:\\Data\\SmartSeaModeling\\Climatologies\\"
-data_dir = "E:\\SmartSea\\climatologies\\"  
-bathymetric_file = "D:\\Data\\ArgoData\\iowtopo2_rev03.nc"
+measurement_dir = "C:\\Data\\SmartSeaModeling\\Climatologies\\"
+data_dir = "D:\\SmartSea\\climatologies\\"  
+bathymetric_file = "C:\\Data\\ArgoData\\iowtopo2_rev03.nc"
 
 all_variables = {"Temperature_monthly":"votemper",\
                  "Salinity_monthly":"vosaline",

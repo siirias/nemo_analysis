@@ -1,3 +1,3 @@
-{'root_data_in':'D:\\Data\\svnfmi_merimallit\\smartsea\\',
- 'root_data_out':'D:\\Data\\'
+{'root_data_in':'C:\\Data\\svnfmi_merimallit\\smartsea\\',
+ 'root_data_out':'C:\\Data\\'
 }
