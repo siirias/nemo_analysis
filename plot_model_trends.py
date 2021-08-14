@@ -20,6 +20,9 @@ import xarray as xr
 from pandas.plotting import register_matplotlib_converters
 register_matplotlib_converters()
 
+import warnings
+warnings.filterwarnings("ignore")
+
 #out_dir = "D:\\Data\\SmartSeaModeling\\Images\\"
 sm = smartseahelper.smh()
 sm.root_data_in = "D:\\SmartSea\\new_dataset\\"
@@ -36,10 +39,10 @@ content_types = {"analyze_salt_content":True,\
 
 analyze_profiles = True
 #profile_types = ["vosaline", "votemper"]
-profile_types = ["votemper"]
+profile_types = ["vosaline"]
 analyze_salt_trends = False
 analyze_sbs_changes = False
-
+analyze_correlations = True
 plot_single_models = True
 plot_combinations = not plot_single_models
 
@@ -104,6 +107,10 @@ class ValueSet():
         return np.max(self.give_values(point,depth,filter_str))
     def min(self,point,depth,filter_str=".*"):
         return np.min(self.give_values(point,depth,filter_str))
+
+
+if(analyze_correlations): 
+    boundary_data = sm.load_boundary_data()
 
 #    
 #    
@@ -272,6 +279,7 @@ if analyze_profiles:
 #    variable = 'votemper'
 #    variable = 'vosaline'
     yearly_means = {}
+    full_point_data = {}
     for variable in profile_types:
     #    all_depths = [0.0,50.0, 100.0, 2000.0] #depth, if under the bottom, the lowest with number is accepted.
         all_depths = [0.0,'bottom_sample'] #depth, if under the bottom, the lowest with number is accepted.
@@ -283,9 +291,12 @@ if analyze_profiles:
             variable_name = "Salinity"
         if(variable in ['votemper']):
             variable_name = "Temperature"
+        full_point_data[variable] = {}
         for point in points:
+            full_point_data[variable][point] = {}
             yearly_means[point] = {}
             for depth_in_list in all_depths:
+                full_point_data[variable][point][depth_in_list] = {}
     #            data_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
                 data_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
                 name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
@@ -336,7 +347,7 @@ if analyze_profiles:
                         dat[set_name] = dat[set_name].set_index('time')
                         yearly_means[point][set_name][depth_in] = \
                             dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
-
+                full_point_data[variable][point][depth_in_list] = dat.copy()
                 #calculate the means for History, RCP4.5 and RCP8.5
                 if(plot_combinations):
                     dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
@@ -531,3 +542,59 @@ if analyze_salt_trends:
                         variable_name, scenario, depth)
             plt.savefig(out_dir+out_filename)
             print("saved: {} {}".format(out_dir, out_filename))
+
+if analyze_correlations:
+    boundary_set = '5meter'
+    for boundary_set in boundary_data.keys():
+        print("####{}####".format(boundary_set))
+        for variable in full_point_data.keys():
+            for point in full_point_data[variable].keys():
+                for depth in full_point_data[variable][point].keys():
+                    dat = full_point_data[variable][point][depth]
+                    print("=={},{},{}==".format(variable, point, depth))
+                    for serie in dat.keys():
+                        dat[serie] = dat[serie].sort_index()
+                        dat[serie] = dat[serie][dat[serie].index>=period['min']] #to trim some 50's values off first.
+                        max_lim = pd.DatetimeIndex([dat[serie].index.max(),\
+                                                    boundary_data[boundary_set][serie].index.max(),
+                                                    period['max']]).min()
+                        min_lim = pd.DatetimeIndex([dat[serie].index.min(),\
+                                                    boundary_data[boundary_set][serie].index.min(),
+                                                    period['min']]).max()
+                        #print(dat[serie].corr(boundary_data['5meter'][serie]))
+                        dat[serie] = dat[serie][(dat[serie].index>=min_lim) \
+                                               & (dat[serie].index<=max_lim)]
+                        # dat[serie]['vosaline'].plot()
+                        boundary_data[boundary_set][serie] = \
+                            boundary_data[boundary_set][serie][(boundary_data[boundary_set][serie].index>=min_lim) \
+                                              & (boundary_data[boundary_set][serie].index<=max_lim)]
+                        # make sure both sets have the minimum value to get the bins right
+                        if(not min_lim in dat[serie]):
+                            dat[serie] = dat[serie].append(pd.DataFrame(None,[min_lim]))
+                            dat[serie] = dat[serie].sort_index()
+                        if(not min_lim in boundary_data[boundary_set][serie]):
+                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].append(pd.DataFrame(None,[min_lim]))
+                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].sort_index()
+                        # make sure both sets have the maximum value to get the bins right
+                        if(not max_lim in dat[serie]):
+                            dat[serie] = dat[serie].append(pd.DataFrame(None,[max_lim]))
+                            dat[serie] = dat[serie].sort_index()
+                        if(not max_lim in boundary_data[boundary_set][serie]):
+                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].append(pd.DataFrame(None,[max_lim]))
+                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].sort_index()
+                            
+                        #boundary_data[boundary_set][serie].plot()        
+                        d1 = pd.DataFrame(dat[serie][variable])
+                        d2 = boundary_data[boundary_set][serie]
+                        # let's take monthly means for the comparison
+                        d1 = d1.groupby(pd.Grouper(freq='1M', offset = min_lim - d1.index.min())).mean()
+                        d2 = d2.groupby(pd.Grouper(freq='1M', offset = min_lim - d2.index.min())).mean()
+                        print("Correlation with border {} in {} is {}".format(\
+                                                    boundary_set,\
+                                                    serie,\
+                                                    d1[variable].corr(d2[variable])))        
+                        plt.figure()
+                        plt.plot(np.array(d1),np.array(d2[variable]),'.')
+                        plt.title("{},{},{}, boundary {}\n{}".format(\
+                                            variable,point,depth,boundary_set,\
+                                            serie))

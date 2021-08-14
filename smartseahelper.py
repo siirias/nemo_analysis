@@ -259,7 +259,8 @@ class smh:
                 d=dat[s]            
                 d = d[(d.index>period['min']) & (d.index<period['max'])]
                 if(s == 'hindcast'): # this to cut hindcast in similar shape than control
-                    d = d[(d.index>period['min']) & (d.index<change_time)]
+                    dat[s] = d[(d.index>period['min']) & (d.index<change_time)]
+                dat[s] = dat[s].sort_index()
             boundary_data[subset] = dat.copy()
         return boundary_data
         
