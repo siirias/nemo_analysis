@@ -43,7 +43,7 @@ profile_types = ["vosaline"]
 analyze_salt_trends = False
 analyze_sbs_changes = False
 analyze_correlations = True
-plot_single_models = True
+plot_single_models = False
 plot_combinations = not plot_single_models
 
 
@@ -544,57 +544,117 @@ if analyze_salt_trends:
             print("saved: {} {}".format(out_dir, out_filename))
 
 if analyze_correlations:
-    boundary_set = '5meter'
-    for boundary_set in boundary_data.keys():
-        print("####{}####".format(boundary_set))
+    # correlate the river inflows
+    inflow_numbers = []
+    data_dir = sm.root_data_in + '\\derived_data\\inflow\\'
+    files = os.listdir(data_dir)
+    files = [x for x in files if x.endswith('csv')]
+    inflow_dat={}
+    for f in files:
+        set_name=re.search('_([^_]*)\.csv',f).groups()[0]
+        inflow_dat[set_name]=pd.read_csv(data_dir+f,\
+                             parse_dates=[0])
+        inflow_dat[set_name]['inflow'] = inflow_dat[set_name]['inflow']*\
+                                1000000\
+                                *60*60*24*365\
+                                *0.0001*0.0001*0.0001  
+                                #fixes one eror in csv creations, then
+                                # changes unit from kg per second
+                                # into km^3/year
+        inflow_dat[set_name]=inflow_dat[set_name].set_index('time')
+        multiplier=1.0
+        if set_name == 'hindcast':
+            multiplier = 30.5
+        print(set_name,inflow_dat[set_name]['inflow'].sum()*multiplier)
+    #calculate the means for History, RCP4.5 and RCP8.5
+    if(plot_combinations):
+        inflow_dat["Control"] = pd.concat([inflow_dat['A001'],inflow_dat['B001'],inflow_dat['D001']])
+        inflow_dat["Control"].sort_index(inplace = True)
+        inflow_dat["RCP45"] = pd.concat([inflow_dat['A002'],inflow_dat['B002'],inflow_dat['D002']])
+        inflow_dat["RCP45"].sort_index(inplace = True)
+        inflow_dat["RCP85"] = pd.concat([inflow_dat['A005'],inflow_dat['B005'],inflow_dat['D005']])
+        inflow_dat["RCP85"].sort_index(inplace = True)
+                    
+    # calculate correlations
+    correlation_set = '5meter'
+    for correlation_set in list(boundary_data.keys()) + ['inflow']:
+        print("####{}####".format(correlation_set))
+        if(correlation_set == 'inflow'):
+            corr_set = inflow_dat
+        else:
+            corr_set = boundary_data[correlation_set]
         for variable in full_point_data.keys():
+            if(correlation_set == 'inflow'):
+                variable2 = 'inflow'
+                correlation_type = 'river'
+            else:
+                variable2 = variable
+                correlation_type = 'boundary'
+                
             for point in full_point_data[variable].keys():
                 for depth in full_point_data[variable][point].keys():
+                    correlation_values = []
                     dat = full_point_data[variable][point][depth]
                     print("=={},{},{}==".format(variable, point, depth))
                     for serie in dat.keys():
                         dat[serie] = dat[serie].sort_index()
                         dat[serie] = dat[serie][dat[serie].index>=period['min']] #to trim some 50's values off first.
                         max_lim = pd.DatetimeIndex([dat[serie].index.max(),\
-                                                    boundary_data[boundary_set][serie].index.max(),
+                                                    corr_set[serie].index.max(),
                                                     period['max']]).min()
                         min_lim = pd.DatetimeIndex([dat[serie].index.min(),\
-                                                    boundary_data[boundary_set][serie].index.min(),
+                                                    corr_set[serie].index.min(),
                                                     period['min']]).max()
                         #print(dat[serie].corr(boundary_data['5meter'][serie]))
                         dat[serie] = dat[serie][(dat[serie].index>=min_lim) \
                                                & (dat[serie].index<=max_lim)]
                         # dat[serie]['vosaline'].plot()
-                        boundary_data[boundary_set][serie] = \
-                            boundary_data[boundary_set][serie][(boundary_data[boundary_set][serie].index>=min_lim) \
-                                              & (boundary_data[boundary_set][serie].index<=max_lim)]
+                        corr_set[serie] = \
+                            corr_set[serie][(corr_set[serie].index>=min_lim) \
+                                              & (corr_set[serie].index<=max_lim)]
                         # make sure both sets have the minimum value to get the bins right
                         if(not min_lim in dat[serie]):
                             dat[serie] = dat[serie].append(pd.DataFrame(None,[min_lim]))
                             dat[serie] = dat[serie].sort_index()
-                        if(not min_lim in boundary_data[boundary_set][serie]):
-                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].append(pd.DataFrame(None,[min_lim]))
-                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].sort_index()
+                        if(not min_lim in corr_set[serie]):
+                            corr_set[serie] = corr_set[serie].append(pd.DataFrame(None,[min_lim]))
+                            corr_set[serie] = corr_set[serie].sort_index()
                         # make sure both sets have the maximum value to get the bins right
                         if(not max_lim in dat[serie]):
                             dat[serie] = dat[serie].append(pd.DataFrame(None,[max_lim]))
                             dat[serie] = dat[serie].sort_index()
-                        if(not max_lim in boundary_data[boundary_set][serie]):
-                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].append(pd.DataFrame(None,[max_lim]))
-                            boundary_data[boundary_set][serie] = boundary_data[boundary_set][serie].sort_index()
+                        if(not max_lim in corr_set[serie]):
+                            corr_set[serie] = corr_set[serie].append(pd.DataFrame(None,[max_lim]))
+                            corr_set[serie] = corr_set[serie].sort_index()
                             
-                        #boundary_data[boundary_set][serie].plot()        
+                        #corr_set[serie].plot()        
                         d1 = pd.DataFrame(dat[serie][variable])
-                        d2 = boundary_data[boundary_set][serie]
+                        d2 = corr_set[serie]
                         # let's take monthly means for the comparison
-                        d1 = d1.groupby(pd.Grouper(freq='1M', offset = min_lim - d1.index.min())).mean()
-                        d2 = d2.groupby(pd.Grouper(freq='1M', offset = min_lim - d2.index.min())).mean()
-                        print("Correlation with border {} in {} is {}".format(\
-                                                    boundary_set,\
+                        d1 = d1.groupby(pd.Grouper(freq='12M', offset = min_lim - d1.index.min())).mean()
+                        d2 = d2.groupby(pd.Grouper(freq='12M', offset = min_lim - d2.index.min())).mean()
+                        the_correlation = d1[variable].corr(d2[variable2])
+                        correlation_values.append(the_correlation)
+                        print("Correlation with {} {} in {} is {}".format(\
+                                                    correlation_type, correlation_set,\
                                                     serie,\
-                                                    d1[variable].corr(d2[variable])))        
+                                                    the_correlation))        
                         plt.figure()
-                        plt.plot(np.array(d1),np.array(d2[variable]),'.')
-                        plt.title("{},{},{}, boundary {}\n{}".format(\
-                                            variable,point,depth,boundary_set,\
+                        plt.plot(np.array(d1),np.array(d2[variable2]),'.',\
+                                 label = "{:.4f}".format(the_correlation))
+                        plt.legend()
+                        plt.title("{},{},{}, {} {}\n{}".format(\
+                                            variable,point,depth,
+                                            correlation_type, correlation_set,\
                                             serie))
+                        out_filename = "Correlation_{}_{}_{}_{}_{}_{}.png".format(\
+                                            variable,point,depth,\
+                                            correlation_type, correlation_set,\
+                                            serie)
+                        out_dir_plus = "\\{}\\".format(correlation_set)
+                        if(not os.path.exists(out_dir+out_dir_plus)):
+                            os.makedirs(out_dir+out_dir_plus)
+                        plt.savefig(out_dir+out_dir_plus+out_filename)
+                        print("saved: {} {}".format(out_dir+out_dir_plus, out_filename))
+                        plt.close()
+                    print("On average: {}\n\n".format(np.array(correlation_values).mean()))

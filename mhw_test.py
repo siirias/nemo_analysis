@@ -24,11 +24,12 @@ from smartseahelper import smh
 from collections import Counter # Needed for the histogram stuff
 
 
-data_dir = "F:\\SmartSea\\all_shark_files\\"  
-out_dir = "D:\\Data\\figures\\smartsea\\MHW\\"
+data_dir = "D:\\SmartSea\\new_dataset\\"  
+#data_dir = "D:\\SmartSea\\all_shark_files\\"  
+out_dir = "C:\\Data\\figures\\smartseaNew\\MHW\\"
 
 
-plot_figures = False
+plot_figures = True
 recalculate = True
 
 datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
@@ -78,18 +79,17 @@ group_p = '10AS'
 
 
 
-def gather_dataset(dataset, part, parameter):
+def gather_dataset(dataset, part, parameter, point):
             filenames = os.listdir(os.path.join(data_dir,dataset[part]))
             filenames = [f for f in filenames if f.endswith("shark"+point + '.nc')]
             data = []
-            
             for f in filenames:
                 # open, and convert to pandas dataframe
                 with xr.open_dataset(os.path.join(data_dir,dataset[part],f)) as d:
                     the_depth_arg = np.argmin(np.abs(d.deptht.values-study_depth))
                     tmp = pd.DataFrame({
-                            'time':d.time_counter,
-                            parameter:d[parameter][:,the_depth_arg,0,0]})
+                            'time':pd.to_datetime(d.time_counter),
+                            parameter:np.array(d[parameter][:,the_depth_arg,0,0])})
                 data.append(tmp)
             data = pd.concat(data)
             data.set_index('time',inplace = True)
@@ -181,9 +181,9 @@ if(recalculate):
             for point in points:
                 for study_depth in study_depths:
                     print("set: {}, point: {}, depth: {} m".format(dataset,point,study_depth))
-                    data_ref = gather_dataset(dataset, 'ref', parameter)
-                    data_45 = gather_dataset(dataset, '4.5', parameter)
-                    data_85 = gather_dataset(dataset, '8.5', parameter)
+                    data_ref = gather_dataset(dataset, 'ref', parameter, point)
+                    data_45 = gather_dataset(dataset, '4.5', parameter, point)
+                    data_85 = gather_dataset(dataset, '8.5', parameter, point)
                     #calculate the climatology values:
                     clim_data_one = data_ref.groupby(data_ref.index.dayofyear).mean() # one year
                     clim_data_90_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.90) # one year

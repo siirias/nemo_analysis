@@ -47,9 +47,27 @@ shown_units = {"SSS":"-",
                "SST":"°C",
                "SBT":"°C",
                "ICE_C":""}
-
+places_to_write = [
+    ["Åland",60.1995487, 20.3711715],
+    ["Vaasa",63.096, 21.61577],
+    ["Pori",61.48655, 21.79690],
+    ["Tahkoluoto",61.63636, 21.40989],
+    ["Yyteri",61.56408, 21.52940],
+    ["Rauma",61.12891, 21.50394],
+    ["Oulu",65.01187, 25.47168],
+    ["Uusikaupunki",60.80165, 21.40861],
+    ["Kokkola",63.83914, 23.13368],
+    ["Lohtaja",64.02248, 23.50657],
+    ["Kalajoki",64.26002, 23.95055],
+    ["Kemi (Ajos)",65.73334, 24.56665],
+    ["Korsnäs",62.78637, 21.18784],
+    ["Ulko-Nahkiainen",64.6764, 24.15177],
+    ["Suurhiekka",65.29057530339477, 24.593138859668834],
+    ["Jaakonmeri  ",61.46,21.02 ],
+    ["Hailuoto",65.01378, 24.72923]
+    ]
 fig_dpi = 300
-close_figures = True  # set to True to keep figures open.
+close_figures = False  # set to True to keep figures open.
 debug_plot_only_comparison = False
 mod_min_lat = 59.92485
 mod_max_lat = 65.9080876
@@ -58,10 +76,13 @@ mod_max_lon = 25.8191425
 mod_shape_lat = 360
 mod_shape_lon = 340
 
+replace_title = None
 plot_bathymetry = False
 plot_bathy_contours = True
 plot_yearly_average = True
-plot_daily_figures = True
+plot_season_average = False
+plot_daily_figures = False
+plot_place_names = True
 comparison = False   # This one is set depending on do 
                     # the setup give name for another dataset
 comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
@@ -78,7 +99,7 @@ the_proj = ccrs.PlateCarree()
 #serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
 #serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
 #serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
-#serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
+serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
 
 #serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
 #serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
@@ -91,7 +112,7 @@ the_proj = ccrs.PlateCarree()
 #serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 #serie_types = [ "SBT_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
 #serie_types = [ "SST_1vsABD1_diff_test"]
-serie_types = [ "ICE_C_5", "ICE_C_2"]
+#serie_types = [ "ICE_C_5", "ICE_C_2"]
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
@@ -122,9 +143,9 @@ def create_main_map(the_proj):
         ax = plt.axes(projection=the_proj)
         ax.set_extent(plot_area)
         ax.set_aspect('auto')
-        ax.coastlines('10m',zorder=4)
+        ax.coastlines('10m',zorder=4, color = '#707070')
         ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',\
-                                                edgecolor='face', facecolor='#555560'))
+                                                edgecolor='face', facecolor='#c0c0c0'))  ##555560
         gl = ax.gridlines(crs=the_proj, draw_labels=True,
                   linewidth=2, color='gray', alpha=0.1, linestyle='-')
         gl.xlabels_top = False
@@ -149,6 +170,22 @@ def create_main_map(the_proj):
                 cb=plt.colorbar()
                 cb.ax.invert_yaxis()
                 cb.set_label('Depth (m)')
+            if(plot_place_names):
+                for place in places_to_write:
+                    h_align = 'left'
+                    v_align = 'bottom'
+                    if(place[0] == 'Pori' or place[0] == 'Oulu'):
+                        v_align = 'top'
+                        h_align = 'center'
+                    if(place[0] == 'Yyteri'):
+                        v_align = 'center'
+                    if(place[0] in  ['Jaakonmeri  ', 'Suurhiekka', "Ulko-Nahkiainen", "Åland"]):
+                        h_align = 'center'
+                    plt.text(place[2],place[1]," "+place[0],\
+                             zorder = 10, transform = the_proj,\
+                             fontsize=11,\
+                             va = v_align, ha = h_align)
+                    plt.plot([place[2]],[place[1]],'.k', markersize=10, zorder = 10, transform = the_proj)
         return fig
 
 def interp_for_climatology(data, clim_data):
@@ -165,6 +202,7 @@ for serie_type in serie_types:
     plot_area = [17.0, 26.0, 60.0, 66.0]
     bathy_max = 250.0
     bathy_levels = list(np.arange(0,bathy_max,50.0))  # number or list of numbers
+    replace_title = None
     for data_set in data_sets:
         in_set = False
         for i in set_configurations:
@@ -289,7 +327,7 @@ for serie_type in serie_types:
         except:
             pass
         #first plot the yearly average:
-        if(plot_yearly_average):
+        if(plot_yearly_average or plot_season_average):
             if(data[var].shape[0] == 12): # this is monthly values
                 day_filters = {
                         "Year":slice(0,None),
@@ -304,6 +342,13 @@ for serie_type in serie_types:
                         "MAM":slice(59,151),
                         "JJA":slice(152,244),
                         "SON":slice(245,336)}
+            if(not plot_yearly_average):
+                day_filters.pop('Year')
+            if(not plot_season_average):
+                day_filters.pop('DJF')
+                day_filters.pop('MAM')
+                day_filters.pop('JJA')
+                day_filters.pop('SON')
             day_filters0 = day_filters.copy() 
             lat = np.linspace(mod_min_lat,mod_max_lat,mod_shape_lat)
             lon = np.linspace(mod_min_lon,mod_max_lon,mod_shape_lon)
@@ -404,6 +449,8 @@ for serie_type in serie_types:
                     cb.set_label('{} ({})'.format(file_var_name, shown_units[var_name]))
                     plt.title("{}, {} \n {}".format(file_var_name,i,file0))
                     filename = "{}_{}_{}.png".format(file_var_name,set_name0,i)
+                if(replace_title):
+                    plt.title(replace_title)
                 plt.savefig(output_dir+output_dir_plus_means+filename,\
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
         

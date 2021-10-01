@@ -421,9 +421,10 @@ output_dir_plus_means = "\\YearTemperature\\"
 set_name = "{}002".format(data_set)
 set_name0 = "{}001".format(data_set)
 color_map = 'hot_r'
-var_lims=[0.0,2.5]
+var_lims=[1.0,2.5]
 var_name = "SST"
 var = all_variables[var_name]
+replace_title = "RCP 4.5"
 
 #SET SST_5vs1_diff_assessment
 file0 = "daily_average_{}001.nc".format(data_set)
@@ -433,9 +434,10 @@ output_dir_plus_means = "\\YearTemperature\\"
 set_name = "{}005".format(data_set)
 set_name0 = "{}001".format(data_set)
 color_map = 'hot_r'
-var_lims=[0.0,2.5]
+var_lims=[1.0,2.5]
 var_name = "SST"
 var = all_variables[var_name]
+replace_title = "RCP 8.5"
 
 
 
