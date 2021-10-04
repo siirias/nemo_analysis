@@ -46,14 +46,16 @@ datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
 #points = ["F16","BO5", "BO3", "F9", "F3" ]  # BoB
 #setup_name = "Bay of Bothnia"
 
-cases = {'Bothnian Sea':["F64", "SR5", "MS4", "C3", "US5B" ],
-         'Bothnian Bay':["F16","BO5", "BO3", "F9", "F3" ],
-         'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
+# cases = {'Bothnian Sea':["F64", "SR5", "MS4", "C3", "US5B" ],
+#          'Bothnian Bay':["F16","BO5", "BO3", "F9", "F3" ],
+#          'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
 
 #cases = {'Bothnian Sea':["F64", "SR5" ],
 #         'Bay of Bothnia':["F16","BO5" ]}
 
-accepted_dates = 'Summer' #'Whole year' 'Winter', 'Summer', 'Spring', 'Autumn'
+cases = {'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
+
+accepted_dates = 'Whole year' #'Whole year' 'Winter', 'Summer', 'Spring', 'Autumn'
 yearday_filter = list(range(1,368))
 #any year will do here, just want the yearday number
 if(accepted_dates == 'Summer'):
@@ -155,7 +157,8 @@ def gather_extremes(treshold, mean_clim, data, accepted_dates, parameter):
                             heat_waves.append({'time':heat_wave_start, \
                                                'length':heat_wave_length,\
                                                'peak_diff':heat_wave_peak_diff,\
-                                               'cathegory':cathegory})
+                                               'cathegory':cathegory,\
+                                               'climatology':mean_clim[i]})
             if( not in_heat_wave):
                 heat_wave_start = None
                 heat_wave_length = 0
@@ -401,7 +404,21 @@ if(recalculate):
             case_data[case]['hw_days'][part]['all'] = tmp.copy()
             
                 
-
+#save the calculated data into files:
+for part in heatwaves.keys():
+    for model_name in heatwaves[part].keys():
+        for point in heatwaves[part][model_name].keys():
+            model_type = model_name
+            if(part == 'ref'):
+                model_type += '001'
+            if(part == '45'):
+                model_type += '002'
+            if(part == '85'):
+                model_type += '005'
+            out_file_name = "MHW_{}_{}.csv".format(model_type,point)
+            heatwaves[part][model_name][point].to_csv(\
+                                out_dir+'\\mhw_data\\'+out_file_name)
+    
 #Then some plottings:
 c_ref = '#000000'
 c_45 = '#5050ff'
