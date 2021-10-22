@@ -72,7 +72,7 @@ for name_marker in name_markers:
             
     else:
         startdate = datetime.datetime(2006, 1, 1)
-        enddate = datetime.datetime(2058, 12, 31)
+        enddate = datetime.datetime(2099, 12, 31)
     datadir = ss.root_data_out+"/derived_data/figure_data/" # where everyt output is stored
     
     ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start, name_marker)

@@ -1,4 +1,7 @@
 #!/bin/bash
+#THis one should be run with bash, not sbatch!
+sbatch <<EOT
+#!/bin/bash
 #SBATCH --job-name=SSt_$1
 #SBATCH --account=Project_2002540
 #SBATCH --time=12:00:00
@@ -7,3 +10,5 @@
 
 
 srun python -u /projappl/project_2001635/siiriasi/nemo_analysis/iris_calculate_thermal_reserve.py $*
+exit 0
+EOT

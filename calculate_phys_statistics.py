@@ -22,22 +22,24 @@ ss=smh()
 ss.grid_type='T'
 ss.interval='d'
 ss.save_interval='year'
-ss.file_name_format="NORDIC-GoB_1{}_{}_{}_grid_{}.nc"  
+ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
 just_bottom = False  # used to get bottom values from 3d grid
 #folder_start='OUTPUT'
 #name_markers=['A001','A002']
 folder_start=''
 #name_markers=['REANALYSIS','A001','B001','C001']
 #name_markers=['A001','B001','C001', 'D001']
-#name_markers=['A005','A002','A001','B005','B002','B001','C001','C002','D001','D002','D005']
-name_markers=['B001','B005','B002','D001','D005','D002']
+name_markers=['A005','A002','A001','B005','B002','B001','D001','D002','D005']
+#name_markers=['B001','B005','B002','D001','D005','D002']
+#name_markers=['D001','D005','D002']
 #variables = ['SSS', 'SST', 'SSH_inst']
 #variables= ['icecon','icevolume','SSS','SST','SBS','vosaline','votemper']
-variables= ['SSS','SST','SBS','vosaline','votemper']
+variables= ['SSS','SST','SBS','SBT','vosaline','votemper']
+#variables= ['SBT']
 #variables= ['vosaline', 'votemper']
 #variables= ['SBS','SSS']
 make_climatology = True 
-extra_definition = 'c20v_'
+extra_definition = 'c30v_'  # c30v_ or c70v_ 
 #extra_definition = ''
 #name_marker='A001'  #this one tells which dataseries is handled.
 climatology_time_slots=366
@@ -45,11 +47,6 @@ if(ss.interval=='m'):
     climatology_time_slots=12
     
 for name_marker in name_markers:
-    if 'A' in name_marker or 'B' in name_marker:
-        ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
-    else:
-
-        ss.file_name_format="SS-GOB_1{}_{}_{}_grid_{}.nc"  
     for var1 in variables:
         var1_actual = var1  # some variables load actually a different name        
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
@@ -60,8 +57,12 @@ for name_marker in name_markers:
             enddate=datetime.datetime(2012,12,31)
             ss.save_interval='year'
         else:
-            startdate=datetime.datetime(2048,1,1)  # should be 2006  #2028 for earlier
-            enddate=datetime.datetime(2058,12,31)
+            if(extra_definition == 'c70v_'):
+                startdate=datetime.datetime(2070,1,1)  # should be 2006  #2028 for earlier
+                enddate=datetime.datetime(2099,12,31)
+            else:
+                startdate=datetime.datetime(2030,1,1)  # should be 2006  #2028 for earlier
+                enddate=datetime.datetime(2059,12,31)
         datadir = ss.root_data_out+"/derived_data/test/" #where everyt output is stored
         
         ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start,name_marker)
@@ -70,14 +71,11 @@ for name_marker in name_markers:
             ss.grid_type='T'
             ss.interval='d'
             climatology_time_slots=366
-        if var1 in ['vosaline','votemper','SBT']:
+        if var1 in ['vosaline','votemper']:
             ss.grid_type='T'
             ss.interval='m'
             climatology_time_slots=12
             depth_ax='deptht'
-            if var1 in ['SBT']:
-                just_bottom = True
-                var1_actual = 'votemper'
         
         
         if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
@@ -122,8 +120,11 @@ for name_marker in name_markers:
             if(just_bottom): # this is 3d value, where bottom is wanted
                 d = ss.give_bottom_values(d)
             d=np.ma.masked_where(d==0.0,d)
-            lons = data.variables['nav_lon'][:]
-            lats = data.variables['nav_lat'][:]
+            coord_extra = '' # if file has several gfrids, the coordinates files have the _grid_T
+            if('nav_lon_grid_T' in data.variables.keys()):
+                coord_extra = '_grid_T'
+            lons = data.variables['nav_lon'+coord_extra][:]
+            lats = data.variables['nav_lat'+coord_extra][:]
             lats,lons=ss.fix_latslons(lats,lons)
             times=data.variables['time_counter'][:].data
             areas=ss.give_areas(lats,lons)
@@ -170,8 +171,8 @@ for name_marker in name_markers:
                     month_year=time.month-1
                     if is_first:
                         if(make_climatology):
-                            climatology_data.createDimension('x',data.dimensions['x'].size)
-                            climatology_data.createDimension('y',data.dimensions['y'].size)
+                            climatology_data.createDimension('x',data.dimensions['x'+coord_extra].size)
+                            climatology_data.createDimension('y',data.dimensions['y'+coord_extra].size)
                             climatology_data.createDimension('time',climatology_time_slots)
                             if(data_3d):
                                 climatology_data.createDimension('deptht',data.dimensions['deptht'].size)

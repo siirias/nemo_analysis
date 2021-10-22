@@ -27,10 +27,10 @@ ss.root_data_out =  '/scratch/project_2002540/siiriasi/smartsea_data/'
 ss.root_data_in =  '/scratch/project_2002540/siiriasi/smartsea_data/'
 ss.save_interval = 'year'
 ss.file_name_format="NORDIC-GOB_1{}_{}_{}_grid_{}.nc"  
-#name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
+name_markers=['A001','B001','D001','A002','A005','B002','B005','D002','D005']
 #name_markers=['A001','B001','D001','A002','A005','B002','B005']
 #name_markers=['REANALYSIS']
-name_markers=['A001','B001','D001']
+#name_markers=['A001','B001','D001']
 #name_markers=['A002','A005','B002','B005','D002','D005']
 #variables=['votemper','vosaline','SSH_inst','SST','SSS']
 variables=['vosaline','votemper']
@@ -60,7 +60,7 @@ for name_marker in name_markers:
             enddate=datetime.datetime(2008,12,31)
         else:
             startdate=datetime.datetime(2006,1,1)
-            enddate=datetime.datetime(2058,12,31)
+            enddate=datetime.datetime(2100,12,31)
         
         
         running_number=0
