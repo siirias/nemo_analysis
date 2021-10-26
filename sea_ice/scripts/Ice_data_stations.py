@@ -15,179 +15,66 @@ import matplotlib.pyplot as plt
 import numpy as np
 import netCDF4 as nc
 import datetime as dt
+import sys
+sys.path.insert(0,'/projappl/project_2001635/siiriasi/nemo_analysis/')
 from smartseahelper import smh
 ss=smh()
-
+in_dir = "/scratch/project_2002540/siiriasi/smartsea_data/"
+out_dir = "/scratch/project_2002540/siiriasi/smartsea_data/derived_data/ice_data/"
 reftime=dt.datetime(1950,1,1)
-
 #Kemi
-obs_lat = 65.72
-obs_lon = 24.43
+measuring_points = {
+'Kemi':{'lat':65.72, 'lon':24.43},
+'Saapaskari':{'lat':65.05, 'lon':25.17},
+'Kalajoki':{'lat':64.29, 'lon':23.89},
+'Kylmapihlaja':{'lat':61.14, 'lon':21.31},
+'Salgrund':{'lat':62.33, 'lon':21.21}
+}
+simulation_sets = ['A001', 'B001', 'D001', 
+                   'A002', 'B002', 'D002', 
+                   'A005', 'B005', 'D005']
+simulation_sets = ['D002', 
+                   'A005', 'B005', 'D005']
+simulation_sets = ['REANALYSIS']
+for simulation_set in simulation_sets:
+    start_year = 2006
+    end_year = 2100
+    if(simulation_set in ['A001', 'B001', 'D001']):
+        start_year = 1976 
+        end_year = 2006
+    if(simulation_set in ['REANALYSIS']):
+        start_year = 1981 
+        end_year = 2008
+    for point_name in measuring_points.keys():
+        obs_lat = measuring_points[point_name]['lat']
+        obs_lon = measuring_points[point_name]['lon']
+        with open(out_dir + "ice_seasons/Ice_season_{}_{}.txt".\
+                    format(point_name, simulation_set), "w") as a_file:
+            for i in range(start_year,end_year):  
+                year=i
+                #data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
 
+                try: 
+                    data=nc.Dataset('{}/{}/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(in_dir, simulation_set, year,year))
+                    print(year)
+                    lons = data.variables['nav_lon'][:]
+                    lats = data.variables['nav_lat'][:]
+                    
+                  
+                    abslat = np.abs(lats-obs_lat)
+                    abslon= np.abs(lons-obs_lon)
+                    c = np.maximum(abslon,abslat)
+                    latlon_idx = np.argmin(c)
+                    x, y = np.where(c == np.min(c)) 
+                    vol=data.variables['icevolume'][:,:,:]
+                    conc = data.variables['icecon'][:,:,:]
+                    
+                    vol = vol[:,x,y]
+                    conc = conc[:,x,y]
 
-with open("ice_seasons/Ice_season_Kemi_D005.txt", "w") as a_file:
+                    for j in range(len(vol)):
+                        a_file.write("\n")
+                        a_file.write("{:},{:},{:},{:}".format(year,j,conc[j][0],vol[j][0]))
+                except FileNotFoundError:
+                    print("Year {} file not found".format(year))
 
-    for i in range(2006,2060):  
-        year=i
-        print year
-        #data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        data=nc.Dataset('run_data/SS-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-        
-        lons = data.variables['nav_lon'][:]
-        lats = data.variables['nav_lat'][:]
-        
-      
-        abslat = np.abs(lats-obs_lat)
-        abslon= np.abs(lons-obs_lon)
-        c = np.maximum(abslon,abslat)
-        latlon_idx = np.argmin(c)
-        x, y = np.where(c == np.min(c)) 
-        vol=data.variables['icevolume'][:,:,:]
-        conc = data.variables['icecon'][:,:,:]
-        
-        vol_Kemi=vol[:,x,y]
-        conc_Kemi=conc[:,x,y]
-
-        for j in range(len(vol_Kemi)):
-            a_file.write("\n")
-            a_file.write("{:},{:},{:},{:}".format(year,j,conc_Kemi[j][0],vol_Kemi[j][0]))
-
-            
-#saapaskari (oulu)
-obs_lat = 65.05
-obs_lon = 25.17
-
-
-with open("ice_seasons/Ice_season_Saapaskari_D005.txt", "w") as a_file:
-
-    for i in range(2006,2060):  
-        year=i
-        print year
-#        data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        data=nc.Dataset('run_data/SS-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-        
-        lons = data.variables['nav_lon'][:]
-        lats = data.variables['nav_lat'][:]
-        
-
-        abslat = np.abs(lats-obs_lat)
-        abslon= np.abs(lons-obs_lon)
-        c = np.maximum(abslon,abslat)
-        latlon_idx = np.argmin(c)
-        x, y = np.where(c == np.min(c)) 
-        vol=data.variables['icevolume'][:,:,:]
-        conc = data.variables['icecon'][:,:,:]
-        
-        vol_Saapaskari=vol[:,x,y]
-        conc_Saapaskari=conc[:,x,y]
-
-        for j in range(len(vol_Saapaskari)):
-            
-            a_file.write("\n")
-            a_file.write("{:},{:},{:},{:}".format(year,j,conc_Saapaskari[j][0],vol_Saapaskari[j][0]))
-
-
-#Kalajoki
-obs_lat = 64.29
-obs_lon = 23.89
-
-
-with open("ice_seasons/Ice_season_Kalajoki_D005.txt", "w") as a_file:
-
-    for i in range(2006,2060):  
-        year=i
-        print year
-#        data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        data=nc.Dataset('run_data/SS-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        lons = data.variables['nav_lon'][:]
-        lats = data.variables['nav_lat'][:]
-        
-        abslat = np.abs(lats-obs_lat)
-        abslon= np.abs(lons-obs_lon)
-        c = np.maximum(abslon,abslat)
-        latlon_idx = np.argmin(c)
-        x, y = np.where(c == np.min(c)) 
-        vol=data.variables['icevolume'][:,:,:]
-        conc = data.variables['icecon'][:,:,:]
-        
-        vol_Kalajoki=vol[:,x,y]
-        conc_Kalajoki=conc[:,x,y]
-
-        for j in range(len(vol_Kalajoki)):
-            
-            a_file.write("\n")
-            a_file.write("{:},{:},{:},{:}".format(year,j,conc_Kalajoki[j][0],vol_Kalajoki[j][0]))
-
-
-#Kylmäpihlaja
-obs_lat = 61.14
-obs_lon = 21.31
-
-
-with open("ice_seasons/Ice_season_Kylmapihlaja_D005.txt", "w") as a_file:
-
-    for i in range(2006,2060):  
-        year=i
-        print year
-#        data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        data=nc.Dataset('run_data/SS-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-        
-        lons = data.variables['nav_lon'][:]
-        lats = data.variables['nav_lat'][:]
-        
-        abslat = np.abs(lats-obs_lat)
-        abslon= np.abs(lons-obs_lon)
-        c = np.maximum(abslon,abslat)
-        latlon_idx = np.argmin(c)
-        x, y = np.where(c == np.min(c)) 
-        vol=data.variables['icevolume'][:,:,:]
-        conc = data.variables['icecon'][:,:,:]
-        
-        vol_Kylmapihlaja=vol[:,x,y]
-        conc_Kylmapihlaja=conc[:,x,y]
-
-        for j in range(len(vol_Kylmapihlaja)):
-            
-            a_file.write("\n")
-            a_file.write("{:},{:},{:},{:}".format(year,j,conc_Kylmapihlaja[j][0],vol_Kylmapihlaja[j][0]))
-
-
-
-#Sälgrund
-obs_lat = 62.33
-obs_lon = 21.21
-
-
-with open("ice_seasons/Ice_season_Salgrund_D005.txt", "w") as a_file:
-
-    for i in range(1980,20092006,2060):  
-        year=i
-        print year
-#        data=nc.Dataset('run_data/NORDIC-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        data=nc.Dataset('run_data/SS-GOB_1d_{:}0101_{:}1231_grid_T.nc'.format(year,year))
-
-        lons = data.variables['nav_lon'][:]
-        lats = data.variables['nav_lat'][:]
-         
-        abslat = np.abs(lats-obs_lat)
-        abslon= np.abs(lons-obs_lon)
-        c = np.maximum(abslon,abslat)
-        latlon_idx = np.argmin(c)
-        x, y = np.where(c == np.min(c)) 
-        vol=data.variables['icevolume'][:,:,:]
-        conc = data.variables['icecon'][:,:,:]
-        
-        vol_Salgrund=vol[:,x,y]
-        conc_Salgrund=conc[:,x,y]
-
-        for j in range(len(vol_Salgrund)):
-            
-            a_file.write("\n")
-            a_file.write("{:},{:},{:},{:}".format(year,j,conc_Salgrund[j][0],vol_Salgrund[j][0]))
-            
