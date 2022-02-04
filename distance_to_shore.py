@@ -17,6 +17,7 @@ from netCDF4 import Dataset
 
 data_dir="C:\\Data\\SmartSeaModeling\\"
 input_file="bathy_meter.nc"
+output_dir = "c:\\Data\\"
 
 nc_data=Dataset(data_dir+input_file,'r')
 bathymetry=nc_data['Bathymetry'][:,:]
@@ -131,7 +132,7 @@ while top_distance==high_number or len(changes_needed)>0:
         last=index_grid[i[0],i[1]]
         index_grid[i[0],i[1]]=i[4]
     top_distance=distance_grid.max()
-    print distance_grid[distance_grid<high_number].max(), top_distance, len(changes_needed)
+    print(distance_grid[distance_grid<high_number].max(), top_distance, len(changes_needed))
 
 
 #Plot what we got
@@ -142,7 +143,7 @@ plt.imshow(distance_copy[-1:0:-1,:])
 #plt.imshow(bathymetry[-1:0:-1,:])
 
 #Let's write out the indices netcdf
-index_netcdf=Dataset('neighbours.nc','w',format='NETCDF4_CLASSIC')
+index_netcdf=Dataset(output_dir+'neighbours.nc','w',format='NETCDF4_CLASSIC')
 lat=index_netcdf.createDimension('lat',index_grid.shape[0])
 lon=index_netcdf.createDimension('lon',index_grid.shape[1])
 index_netcdf.createVariable('lat',np.float64,('lat',))
@@ -171,7 +172,7 @@ if(make_fake_ice_mask):
     fast_ice_mask=bathymetry[:,:].copy()
     fast_ice_mask[fast_ice_mask<15.]=1
     fast_ice_mask[fast_ice_mask>=15.]=0
-    ice_netcdf=Dataset('fast_ice_mask.nc','w',format='NETCDF4_CLASSIC')
+    ice_netcdf=Dataset(output_dir+'fast_ice_mask.nc','w',format='NETCDF4_CLASSIC')
     lat=ice_netcdf.createDimension('lat',index_grid.shape[0])
     lon=ice_netcdf.createDimension('lon',index_grid.shape[1])
     ice_netcdf.createVariable('lat',np.float64,('lat',))
@@ -183,21 +184,3 @@ if(make_fake_ice_mask):
     ice_netcdf['fastice_mask'][:,:]=fast_ice_mask
     ice_netcdf.close()
 
-#random testi
-for i in range(1000):
-    while True:
-        x=random.randint(0,x_max-1)
-        y=random.randint(0,y_max-1)
-        if(distance_grid[x,y]>small_number):
-            break
-    next_place=x+y*x_max
-    plot_x=[]
-    plot_y=[]
-    for i in range(80):
-        plot_x.append(x+1)
-        plot_y.append(y)
-        (dx,dy)=direction_from_neighbour_num(index_grid[x,y])
-        x+=dx
-        y+=dy
-    plt.plot(plot_y,x_max-np.array(plot_x),'w',alpha=0.2)
-    plt.plot([plot_y[0],plot_y[-1]],[x_max-np.array(plot_x[0]),x_max-np.array(plot_x[-1])],'g',alpha=0.2)    
