@@ -26,9 +26,9 @@ from collections import Counter # Needed for the histogram stuff
 
 data_dir = "D:\\SmartSea\\new_dataset\\"  
 #data_dir = "D:\\SmartSea\\all_shark_files\\"  
-out_dir = "C:\\Data\\figures\\smartseaNew\\MHW\\"
+out_dir = "C:\\Data\\figures\\smartseaNew\\MHW_extra\\"
 
-
+mhw_limit = 0.95 #default 0.9, calculate events exeeding 9th percentile
 plot_figures = True
 recalculate = True
 
@@ -46,14 +46,14 @@ datasets = [{'n':'A','ref':"A001", '4.5':"A002", '8.5':"A005"},\
 #points = ["F16","BO5", "BO3", "F9", "F3" ]  # BoB
 #setup_name = "Bay of Bothnia"
 
-# cases = {'Bothnian Sea':["F64", "SR5", "MS4", "C3", "US5B" ],
-#          'Bothnian Bay':["F16","BO5", "BO3", "F9", "F3" ],
-#          'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
+cases = {'Bothnian Sea':["F64", "SR5", "MS4", "C3", "US5B" ],
+          'Bothnian Bay':["F16","BO5", "BO3", "F9", "F3" ],
+          'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
 
 #cases = {'Bothnian Sea':["F64", "SR5" ],
 #         'Bay of Bothnia':["F16","BO5" ]}
 
-cases = {'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
+#cases = {'Gulf of Bothnia':["F64", "SR5", "MS4", "C3", "US5B", "F16","BO5", "BO3", "F9", "F3"]}
 
 accepted_dates = 'Whole year' #'Whole year' 'Winter', 'Summer', 'Spring', 'Autumn'
 yearday_filter = list(range(1,368))
@@ -189,8 +189,12 @@ if(recalculate):
                     data_85 = gather_dataset(dataset, '8.5', parameter, point)
                     #calculate the climatology values:
                     clim_data_one = data_ref.groupby(data_ref.index.dayofyear).mean() # one year
-                    clim_data_90_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.90) # one year
-                    clim_data_10_perc = data_ref.groupby(data_ref.index.dayofyear).quantile(0.1) # one year
+                    clim_data_90_perc = \
+                        data_ref.groupby(data_ref.index.dayofyear).\
+                        quantile(mhw_limit) # one year
+                    clim_data_10_perc = data_ref.groupby(\
+                        data_ref.index.dayofyear).\
+                        quantile(1.0-mhw_limit) # one year
                     # then copy this to cover the whole series:
                     clim_data_long =  clim_data_to_axis(data_85,clim_data_one)
                     clim_data_trigg_ref = clim_data_to_axis(data_ref, clim_data_90_perc)

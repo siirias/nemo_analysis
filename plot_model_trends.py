@@ -29,7 +29,7 @@ sm.root_data_in = "D:\\SmartSea\\new_dataset\\"
 sm.root_data_out = "C:\\Data\\"
 #sm.root_data_in = "D:\\Data\\svnfmi_merimallit\\smartsea\\"
 out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\test\\"
-fig_factor = 1.5 #0.8  #1.5
+fig_factor = 0.8#1.5 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
 #analyze_heat_content = True
@@ -37,13 +37,13 @@ fig_size = (10*fig_factor,5*fig_factor)
 content_types = {"analyze_salt_content":True,\
                  "analyze_heat_content":True}
 
-analyze_profiles = True
-#profile_types = ["vosaline", "votemper"]
-profile_types = ["vosaline"]
+analyze_profiles = False
+profile_types = ["vosaline", "votemper"]
+#profile_types = ["vosaline"]
 analyze_salt_trends = False
 analyze_sbs_changes = False
-analyze_correlations = True
-plot_single_models = False
+analyze_correlations = False
+plot_single_models = True
 plot_combinations = not plot_single_models
 
 
@@ -62,7 +62,8 @@ create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
+period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2100,1,1)}
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
@@ -297,7 +298,6 @@ if analyze_profiles:
             yearly_means[point] = {}
             for depth_in_list in all_depths:
                 full_point_data[variable][point][depth_in_list] = {}
-    #            data_dir ='D:\\Data\\SmartSeaModeling\\Extracted_profiles\\'
                 data_dir = sm.root_data_in+'derived_data\\extracted_profiles\\'
                 name_format = 'profile_{}_(.*)_{}.nc'.format(point,variable)
                 files = os.listdir(data_dir)
