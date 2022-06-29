@@ -8,6 +8,8 @@ import datetime as dt
 import calendar
 import numpy as np
 import os
+import re
+import pandas as pd
 class smh:
     # 1:d/h 2:startdate 3:enddate 4:grid type (T)
     #date format YYYYMMDD .strftime("%Y%m%d")
@@ -124,24 +126,143 @@ class smh:
         return values
     def get_bottom(self, grid):
         # grid is supposed to be masked array, Time, D,Lat,Lon
+        # or D,lat, lon
         # The idea in this is to shifht the mask one layer up,
         # and find the values which are masked in one (and only one) of
         # these masks. 
         full_shape = grid.shape
-        bottom_layers = np.zeros((  full_shape[0],\
-                                    full_shape[2],
-                                    full_shape[3]))
-        bottom_layers = np.ma.masked_array(bottom_layers,False)
-        mask_roll = np.roll(grid.mask,-1,1) # move mask values one up.
-        mask_roll[:,-1,:,:] = True  # And mark bottom most mask as True.
-                                   # This to get bottom values if there are no mask at end
-        grid.mask = ~(grid.mask ^ mask_roll)
-        bottom_layers = np.sum(grid,1)
-        values = np.array(np.sum(~grid.mask,1),bool)  # used to get the mask
+        dimensions = len(full_shape)
+        if(dimensions == 4): # case with time, D, lat, lon
+            bottom_layers = np.zeros((  full_shape[0],\
+                                        full_shape[2],
+                                        full_shape[3]))
+            bottom_layers = np.ma.masked_array(bottom_layers,False)
+            mask_roll = np.roll(grid.mask,-1,1) # move mask values one up.
+            mask_roll[:,-1,:,:] = True  # And mark bottom most mask as True.
+                                       # This to get bottom values if there are no mask at end
+            grid.mask = ~(grid.mask ^ mask_roll)
+            bottom_layers = np.sum(grid,1)
+            values = np.array(np.sum(~grid.mask,1),bool)  # used to get the mask
+        else: # case with D, lat, lon
+            bottom_layers = np.zeros((  full_shape[1],
+                                        full_shape[2]))
+            bottom_layers = np.ma.masked_array(bottom_layers,False)
+            mask_roll = np.roll(grid.mask,-1,0) # move mask values one up.
+            mask_roll[-1,:,:] = True  # And mark bottom most mask as True.
+                                       # This to get bottom values if there are no mask at end
+            grid.mask = ~(grid.mask ^ mask_roll)
+            bottom_layers = np.sum(grid,0)
+            values = np.array(np.sum(~grid.mask,0),bool)  # used to get the mask
+            
         bottom_layers.mask = ~values
         return bottom_layers
+
+    def get_depth(self, grid, depth_axis, the_depth):
+        # grid is supposed to be masked array, Time, D,Lat,Lon
+        # or D,lat, lon
+        # The idea in this is to shifht the mask one layer up,
+        # and find the values which are masked in one (and only one) of
+        # these masks. 
+        full_shape = grid.shape
+        dimensions = len(full_shape)
+        layer = np.argmin(np.abs(depth_axis-the_depth))
+        if(dimensions == 4): # case with time, D, lat, lon
+            the_layer = grid[:,layer,:,:]
+        else: # case with D, lat, lon
+            the_layer = grid[layer,:,:]
             
-        
+        return the_layer
+            
+    def set_style(self, set_name,alpha=1.0):
+        # returns a dictionary that cna be used to
+        # define plot style. COlor, linestyles, thickness,
+        # Based on the string given. Homogenizes plots when this
+        # is used.
+        scenario = ""
+        if( '001' in set_name or 'hindcast' or 'HISTORY' in set_name):
+            scenario = "history"
+        if('002' in set_name or 'RCP45' in set_name):
+            scenario = "rcp45"
+        if('005' in set_name or 'RCP85' in set_name):
+            scenario = "rcp85"
+        model_type = re.search("^[A-Z]*",set_name).group()
+        #execeptions for mean values:
+        if(set_name.upper() == "RCP85"):
+            model_type = "RCP85"
+        if(set_name.upper() == "RCP45"):
+            model_type = "RCP45"
+        if(set_name.upper() == "CONTROL"):
+            model_type = "Control"
+        if(set_name.upper() == "HINDCAST"):
+            model_type = "hindcast"
+    
+        colors = {
+            'A':'b',
+            'B':'#ff8c00',
+            'C':'c',
+            'D':'g',
+            'h':'k',
+            'RCP':'r',
+            'HISTORY':'#66CCEE',
+            'hindcast':'#66CCEE',
+            'REANALYSIS':'k',
+            'RCP45':'b',
+            'RCP85':'#ff8c00',
+            'Control':'m'
+        }
+        scen_styles = {
+            'history':'--',
+            'rcp45':'-',
+            'rcp85':'-'
+        }
+        line_width = 1.0
+        marker = ''
+        if(scenario == 'rcp85'):
+            line_width=2.0
+#        print(set_name,scenario)
+#        print(model_type,scenario)
+        return {'color':colors[model_type],
+                'linestyle':scen_styles[scenario],
+                'linewidth':line_width,
+                'alpha':alpha,
+                'marker':marker}
+
+    def load_boundary_data(self, period = None):
+        boundary_data = {}
+        change_time = dt.datetime(2006,1,1) # used to cut the forecasts before this
+        if(not period): #default period
+            period={'min':dt.datetime(1976,1,1), 'max':dt.datetime(2100,1,1)}
+        data_dir = self.root_data_in + '\\derived_data\\boundary\\'
+    #    for subset in ['boundary_mean','5meter','20meter','80meter','120meter']:
+        yearly_means_bnds = {}
+        for subset in ['boundary_mean','5meter','80meter']:
+            files = os.listdir(data_dir)
+            files = [f for f in files if subset in f]
+            dat={}
+            for f in files:
+                set_name=re.search('_([^_]*)\.csv',f).groups()[0]
+                dat[set_name]=pd.read_csv(data_dir+f,\
+                                     parse_dates=[0])
+                dat[set_name]=dat[set_name].set_index('time')
+                if(not set_name in yearly_means_bnds.keys()):
+                    yearly_means_bnds[set_name]={}
+                yearly_means_bnds[set_name][subset] = \
+                    dat[set_name].groupby(pd.Grouper(freq='1AS')).mean()
+            #calculate the means for History, RCP4.5 and RCP8.5
+            dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+            dat["Control"].sort_index(inplace = True)
+            dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
+            dat["RCP45"].sort_index(inplace = True)
+            dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
+            dat["RCP85"].sort_index(inplace = True)
+            for s in dat:
+                d=dat[s]            
+                d = d[(d.index>period['min']) & (d.index<period['max'])]
+                if(s == 'hindcast'): # this to cut hindcast in similar shape than control
+                    dat[s] = d[(d.index>period['min']) & (d.index<change_time)]
+                dat[s] = dat[s].sort_index()
+            boundary_data[subset] = dat.copy()
+        return boundary_data
         
         
         

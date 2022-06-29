@@ -23,26 +23,32 @@ import siri_omen.utility as sou
 import siri_omen.nemo_reader as nrd
 import cf_units
 import iris.util
-import gsw  # TEOS-10
+#import gsw  # TEOS-10
 import warnings
 
 ss = smh()
 ss.grid_type = 'T'
 ss.interval = 'm'
 #ss.root_data_in = "/lustre/tmp/siirias/o/tmp/"  # gludge as the main disk is not sure enough.
-ss.root_data_in = "/arch/smartsea/analysis/"
+#ss.root_data_in = "/arch/smartsea/analysis/"
+ss.root_data_in = "/scratch/project_2001635/siiriasi/smartsea_data/"
+ss.root_data_out = "/scratch/project_2001635/siiriasi/smartsea_data/"
 # folder_start = 'OUTPUT'
 #name_markers = ['new_REANALYSIS']
-name_markers = ['new_REANALYSIS','REANALYSIS_SMHI','REANALYSIS']
+#name_markers = ['D001','C001','D002', 'D005', 'C002']
+name_markers = ['A001','A002', 'A005']
 variable_temperature = 'potential_temperature'
 variable_salinity = 'salinity'
 #collapse_style={'name':'depth','coords':['longitude', 'latitude']}    
-collapse_style={'name':'depthlat','coords':['longitude']}    
+#collapse_style={'name':'depthlat','coords':['longitude']}    
 #collapse_style={'name':'depthlatlon','coords':[]}    
-#collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
+collapse_style={'name':'total','coords':['longitude','latitude','depth']}    
 for name_marker in name_markers:
-    folder_start = 'OUTPUT'
+    folder_start = ''
     ss.save_interval = 'year'
+    ss.file_name_format = 'NORDIC-GOB_1{}_{}_{}_grid_{}.nc'
+    if 'D' in name_marker or 'C' in name_marker:
+        ss.file_name_format = 'SS-GOB_1{}_{}_{}_grid_{}.nc'
     if '1' in name_marker: # the 001 series are hindcasts, all other scenarios
         startdate = datetime.datetime(1975, 1, 1)
         enddate = datetime.datetime(2005, 12, 31)
@@ -62,7 +68,7 @@ for name_marker in name_markers:
     else:
         startdate = datetime.datetime(2006, 1, 1)
         enddate = datetime.datetime(2058, 12, 31)
-    datadir = ss.root_data_out+"/derived_data/" # where everyt output is stored
+    datadir = ss.root_data_out+"/derived_data/figure_data/" # where everyt output is stored
     
     ss.main_data_folder= ss.root_data_in+"/{}{}/".format(folder_start, name_marker)
     depth_ax = 'deptht'

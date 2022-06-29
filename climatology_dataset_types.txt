@@ -1,0 +1,443 @@
+#SET SBS_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SBS_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-1.0,1.0]
+var_name = "SBS"
+var = all_variables[var_name]
+
+#SET SBS_2vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SBS_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-1.0,1.0]
+#var_name = "Temperature_monthly"
+var_name = "SBS"
+var = all_variables[var_name]
+
+#SET SBS_5vs2_diff
+file0 = "daily_average_{}002.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SBS_{}5vs2\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}002".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-1.0,1.0]
+#var_name = "Temperature_monthly"
+var_name = "SBS"
+var = all_variables[var_name]
+
+#SET SBS_1vsABD1_diff
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBS_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = cmo.cm.diff
+var_lims=[-0.5,0.5]
+var_name = "SBS"
+var = all_variables[var_name]
+
+
+#SET SSS_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SSS_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-0.5,0.5]
+#var_name = "Temperature_monthly"
+var_name = "SSS"
+var = all_variables[var_name]
+
+#SET SSS_2vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SSS_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-0.5,0.5]
+#var_name = "Temperature_monthly"
+var_name = "SSS"
+var = all_variables[var_name]
+
+#SET SSS_5vs2_diff
+file0 = "daily_average_{}002.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SSS_{}5vs2\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}002".format(data_set)
+color_map = cmo.cm.diff
+var_lims=[-0.5,0.5]
+#var_name = "Temperature_monthly"
+var_name = "SSS"
+var = all_variables[var_name]
+
+#SET SSS_1vsABD1_diff
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SSS_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = cmo.cm.diff
+var_lims=[-0.5,0.5]
+var_name = "SSS"
+var = all_variables[var_name]
+
+#SET SST_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_2vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_5vs2_diff
+file0 = "daily_average_{}002.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs2\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}002".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_5vsABD5_diff
+file0 = "daily_average_ABD005.nc"
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vsABD5\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\ABD5\\"
+set_name = "{}005".format(data_set)
+set_name0 = "ABD001"
+color_map = 'RdBu_r'
+var_lims=[-2.0,2.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_2vsABD2_diff
+file0 = "daily_average_ABD002.nc"
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}2vsABD2\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\ABD2\\"
+set_name = "{}002".format(data_set)
+set_name0 = "ABD002"
+color_map = 'RdBu_r'
+var_lims=[-2.0,2.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_1vsABD1_diff
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SST_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = 'RdBu_r'
+var_lims=[-2.0,2.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+
+
+#SET SST_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SBT_2vs1_diff
+file0 = "monthly_average_{}001.nc".format(data_set)
+file = "monthly_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SBT_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SBT"
+var = all_variables[var_name]
+
+#SET SBT_5vs1_diff
+file0 = "monthly_average_{}001.nc".format(data_set)
+file = "monthly_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SBT_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'RdBu_r'
+var_lims=[-3.0,3.0]
+var_name = "SBT"
+var = all_variables[var_name]
+
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_2
+file0 = ""
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\2\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_5
+file0 = ""
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\5\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+
+
+
+
+#SET SST_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SST_{}\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.thermal
+var_lims=[-2.0,20.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SBT_1
+file0 = ""
+file = "monthly_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBT_{}\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.thermal
+var_lims=[-2.0,20.0]
+var_name = "SBT"
+var = all_variables[var_name]
+
+#SET SST_2
+file0 = ""
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\2\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.thermal
+var_lims=[-2.0,20.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_5
+file0 = ""
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\5\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.thermal
+var_lims=[-2.0,20.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SSS_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SSS_{}\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.haline
+var_lims=[0.0,7.0]
+var_name = "SSS"
+var = all_variables[var_name]
+
+#SET SBS_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBS_{}\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.haline
+var_lims=[0.0,10.0]
+var_name = "SBS"
+var = all_variables[var_name]
+
+
+#SET SST_5vs1_diff_special
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\Assessment\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.thermal
+var_lims=[1.0,2.5]
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_2vs1_diff_special
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs2\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\Assessment\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.thermal
+var_lims=[1.0,2.5]
+#var_name = "Temperature_monthly"
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SST_1vsABD1_diff_test
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SST_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = 'RdBu_r'
+#color_map = cmo.cm.thermal
+var_lims=[-2.5,2.5]
+#var_lims=[-0.0,20.0]
+var_name = "SST"
+var = all_variables[var_name]
+
+#SET SBT_1vsABD1_diff_test
+file0 = "monthly_average_ABD001.nc"
+file = "monthly_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBT_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = 'RdBu_r'
+#color_map = cmo.cm.thermal
+var_lims=[-2.5,2.5]
+#var_lims=[-0.0,20.0]
+var_name = "SBT"
+var = all_variables[var_name]
+
+#SET SBS_1vsABD1_diff_test
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SBS_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = cmo.cm.diff
+var_lims=[-1.0,1.0]
+#var_lims=[0.0,10.0]
+
+var_name = "SBS"
+var = all_variables[var_name]
+
+#SET SSS_1vsABD1_diff_test
+file0 = "daily_average_ABD001.nc"
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\SSS_{}1vsABD1\\".format(data_set)
+output_dir_plus_means = "\\YearSalinity\\ABD1\\"
+set_name = "{}001".format(data_set)
+set_name0 = "ABD001"
+color_map = cmo.cm.diff
+var_lims=[-1.0,1.0]
+#var_lims=[0.0,10.0]
+var_name = "SSS"
+var = all_variables[var_name]
+
+
+######## FOr the assessment
+
+#SET SST_2vs1_diff_assessment
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\SST_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'hot_r'
+var_lims=[1.0,2.5]
+var_name = "SST"
+var = all_variables[var_name]
+replace_title = "RCP 4.5"
+
+#SET SST_5vs1_diff_assessment
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\SST_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearTemperature\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = 'hot_r'
+var_lims=[1.0,2.5]
+var_name = "SST"
+var = all_variables[var_name]
+replace_title = "RCP 8.5"
+
+
+

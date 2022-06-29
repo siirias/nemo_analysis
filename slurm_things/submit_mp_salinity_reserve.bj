@@ -1,0 +1,9 @@
+#!/bin/bash
+#SBATCH --job-name=myTest
+#SBATCH --account=Project_2001635
+#SBATCH --time=16:00:00
+#SBATCH --mem-per-cpu=64G
+#SBATCH --partition=fmi
+#SBATCH -n 4
+
+srun python /projappl/project_2001635/siiriasi/nemo_analysis/iris_calculate_reserve.py
