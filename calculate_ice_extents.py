@@ -13,29 +13,33 @@ Created on Tue Jul  3 14:11:45 2018
 """
 
 import datetime
-import matplotlib as mp
-import matplotlib.pyplot as plt
+#import matplotlib as mp
+#import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import netcdf
-from mpl_toolkits.basemap import Basemap
-from mpl_toolkits.basemap import Basemap, shiftgrid, cm
+#from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap, shiftgrid, cm
 from netCDF4 import Dataset
 from smartseahelper import smh
 import os
-import cmocean
+#import cmocean
 import pandas as pd
 
 ss=smh()
 ss.grid_type='T'
 ss.interwall='d'
 
-name_markers=['A001','B001','C001']
+#name_markers=['A001','A002','A005']
+name_markers=['REANALYSIS']
 #name_markers=['A001']  #this one tells which dataseries is handled.
 for name_marker in name_markers:
     
     if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
         startdate=datetime.datetime(1975,1,1)
         enddate=datetime.datetime(2005,12,31)
+    elif 'REANALYSIS' in name_marker:
+        startdate=datetime.datetime(1980,1,1)
+        enddate=datetime.datetime(2008,12,31)
     else:
         startdate=datetime.datetime(2006,1,1)
         enddate=datetime.datetime(2058,12,31)
@@ -43,9 +47,9 @@ for name_marker in name_markers:
     ss=smh()
     ss.grid_type='T'
     ss.interwall='d'
-    ss.main_data_folder= ss.root_data_in+"/OUTPUT{}/".format(name_marker)
+    ss.main_data_folder= ss.root_data_in+"/{}/".format(name_marker)
     var1 = 'SST'  #'SST', 'SSS'
-    
+    var2 = 'soicecov'    
     
     if '1' in name_marker: #the 001 series are hindcasts, all other scenarios
         series_name='Hindcast_{}_{}'.format(name_marker,var1)
@@ -66,23 +70,11 @@ for name_marker in name_markers:
     print("ok {} out of {}".format(ok_files,len(filenames)))
         
     running_number=0
-    if var1 in ['SST']:
-        var_min=-0.5
-        var_max=20.0
-        var1_cm=cmocean.cm.thermal
-    if var1 in ['SSS']:
-        var_min=1.0 
-        var_max=6.0 
-        var1_cm=cmocean.cm.haline 
-    
-    var2 = 'icecon'  #None, 'icecon'
-    var2_min=0.0
-    var2_max=1.0
     
     just_one=False
     if(just_one):
         files_working=[files_working[0]]
-    ice_extents=None
+    ice_extents=0.0
     time_axis=None    
     is_first=True
     yearly_ice_maximum={}
@@ -122,7 +114,7 @@ for name_marker in name_markers:
             running_number+=1
             print("Analysing {} ({} of approx {})".format(time,running_number,int(len(files_working)*30.5)))
     
-    full_data=pd.DataFrame({'time':time_axis,'ice_extent':ice_extents})
+    full_data=pd.DataFrame({'time':time_axis,'ice_extent':ice_extents,'ice_percentage':ice_extents/areas[d[0].mask == False].sum()})
     full_data.to_csv(datadir+'ice_extent_{}.csv'.format(name_marker),index=False)
     yearly_data=pd.DataFrame({'year':list(yearly_ice_maximum.keys()),'max_ice':list(yearly_ice_maximum.values())})
     yearly_data.to_csv(datadir+'yearly_max_ice_{}.csv'.format(name_marker),index=False)
