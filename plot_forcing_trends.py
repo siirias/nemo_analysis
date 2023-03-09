@@ -19,26 +19,26 @@ sm = smartseahelper.smh()
 output_dir = "C:\\Data\\Figures\\SmartSeaNEW\\Forcings\\"
 main_data_dir = "C:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
 
-fig_factor = 0.8  #1.5
+fig_factor = 0.9  #1.5
 #fig_size = (10*fig_factor,5*fig_factor)
-fig_size = (10*fig_factor,7*fig_factor)
+fig_size = (5*fig_factor,7*fig_factor)
 fig_dpi = 300
 analyze_inflow = True
-analyze_atmosphere = True
+analyze_atmosphere = False
 analyze_boundary = True
 
-plot_single_models = True
+plot_single_models = False
 plot_combinations = not plot_single_models
 
-plot_trends = True
+plot_trends = False
 plot_smoothed = False
 plot_yearly_mean = True
 plot_original = False
 plot_cloud = False
 plot_scatter = True
 show_grid = True
-fix_inflow_ylims = False # (100,350)# False
-show_trends_in_Legend = True
+fix_inflow_ylims = (5.0,8.0) #False # (100,350)# False
+show_trends_in_Legend = False
 
 b_val = 'vosaline' # 'avg_temp'
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
@@ -46,7 +46,7 @@ period={'min':dt.datetime(1976,1,1), 'max':dt.datetime(2100,1,1)}
 change_time = dt.datetime(2006,1,1) # used to cut the forecasts before this
    
 plot_shift = dt.timedelta(5*365)  # how much decadal errorbars are shifted to middle of the decade
-extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (too much)
+extra_shift_step = dt.timedelta(0.6*365) # keep the errorbars from overlapping (too much)
     
         
 if analyze_inflow:
@@ -316,10 +316,10 @@ if analyze_boundary:
                 plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
                 label_text = None # to prevent plotting the label more than once
             boundary_numbers.append([s,float(mean.mean()),fitting[0]*365.15,float(std.mean())])
-        plt.ylim([5.5,7.5])
+        plt.ylim([5.0,8.0])
         if(show_grid):
             plt.grid('on')
-        plt.legend()
+        plt.legend(loc = 'lower left')
         final_filename = "boundary_{}_{}_{}-{}.png".format(\
                     subset,set_name,period['min'].year,period['max'].year)
         plt.savefig(output_dir + final_filename,dpi = fig_dpi)

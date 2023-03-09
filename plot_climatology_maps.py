@@ -19,7 +19,7 @@ import xarray as xr
 import cmocean as cmo
 from smartseahelper import smh
 
-output_dir = "C:\\Data\\Figures\\SmartSea\\"
+output_dir = "C:\\Data\\Figures\\SmartSeaNew\\"
 output_dir_plus = ""
 measurement_dir = "C:\\Data\\SmartSeaModeling\\Climatologies\\"
 data_dir = "D:\\SmartSea\\climatologies\\"  
@@ -31,7 +31,8 @@ all_variables = {"Temperature_monthly":"votemper",\
                  "SBS":"SBS",
                  "SST":"SST",
                  "SBT":"votemper",
-                 "ICE_C":"icecon"
+                 "ICE_C":"icecon",
+                 "ICE_V":"icevolume"
                  }
 
 color_maps = {"Temperature_monthly":cmo.cm.thermal,\
@@ -39,14 +40,16 @@ color_maps = {"Temperature_monthly":cmo.cm.thermal,\
              "SSS":cmo.cm.haline,
              "SBS":cmo.cm.haline,
              "SST":cmo.cm.thermal,
-             "ICE_C":cmo.cm.ice
+             "ICE_C":cmo.cm.ice,
+             "ICE_V":cmo.cm.ice
               }
 
 shown_units = {"SSS":"-",
                "SBS":"-",
                "SST":"°C",
                "SBT":"°C",
-               "ICE_C":""}
+               "ICE_C":"",
+               "ICE_V":"m"}
 places_to_write = [
     ["Åland",60.1995487, 20.3711715],
     ["Vaasa",63.096, 21.61577],
@@ -80,9 +83,9 @@ replace_title = None
 plot_bathymetry = False
 plot_bathy_contours = True
 plot_yearly_average = True
-plot_season_average = False
+plot_season_average = True
 plot_daily_figures = False
-plot_place_names = True
+plot_place_names = False
 comparison = False   # This one is set depending on do 
                     # the setup give name for another dataset
 comparison_climatology = None  # None, 'BNSC', 'BNSC_old', 'SDC', 'TSO50'  # if not none, overrides configuration comparison
@@ -99,7 +102,7 @@ the_proj = ccrs.PlateCarree()
 #serie_types = [ "SSS_5vs1_diff", "SSS_2vs1_diff",  "SBS_5vs1_diff", "SBS_2vs1_diff"]
 #serie_types = [ "SST_1vsABD1_diff", "SBS_1vsABD1_diff", "SSS_1vsABD1_diff"]
 #serie_types = [ "SST_1", "SBT_1", "SSS_1", "SBS_1"]
-serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
+#serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
 
 #serie_types = [ "SST_2vs1_diff_special", "SST_5vs1_diff_special"]
 #serie_types = [ "SBS_1vsABD1_diff_test", "SSS_1vsABD1_diff_test", "SST_1vsABD1_diff_test"]
@@ -112,10 +115,18 @@ serie_types = [ "SST_2vs1_diff_assessment", "SST_5vs1_diff_assessment"]
 #serie_types = [ "SBT_2vs1_diff", "SBT_5vs1_diff","SBS_2vs1_diff", "SBS_5vs1_diff","SST_2vs1_diff", "SST_5vs1_diff","SSS_2vs1_diff", "SSS_5vs1_diff"]
 #serie_types = [ "SBT_1vsABD1_diff_test", "SBS_1vsABD1_diff_test"]
 #serie_types = [ "SST_1vsABD1_diff_test"]
-#serie_types = [ "ICE_C_5", "ICE_C_2"]
+#serie_types = [ "ICE_C_1", "ICE_C_5", "ICE_C_2"]
+#serie_types = [ "ICE_C_1"]
+#serie_types = [ "ICE_C_5vs1_diff", "ICE_C_2vs1_diff"]
+#serie_types = [ "ICE_C_1_MAX", "ICE_C_5_MAX", "ICE_C_2_MAX"]
+#serie_types = [ "ICE_V_1", "ICE_V_5", "ICE_V_2"]
+#serie_types = [ "ICE_V_5vs1_diff", "ICE_V_2vs1_diff"]
+serie_types = [ "ICE_V_1_MAX", "ICE_V_5_MAX", "ICE_V_2_MAX", "ICE_V_1_MIN", "ICE_V_5_MIN", "ICE_V_2_MIN"]
+
 
 data_sets = ["ABD", "A", "B", "D"]
 data_sets = ["ABD"]
+data_sets = ["A", "B", "D"]
 #data_sets = ["A", "B", "D"]
 
 # read configuration from a file.

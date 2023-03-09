@@ -126,7 +126,7 @@ for name_marker in name_markers:
                         layer_depth=depths[i]-depths[i-1]
                     else:
                         layer_depth=depths[i]
-                    volumes[:,:,i]*=layer_depth*0.001  #because km
+                    volumes[i,:,:]*=layer_depth*0.001  #because km
             else:
                 raise ValueError("data doesn't seem to be 3D") 
             if(just_one):

@@ -252,9 +252,260 @@ var_lims=[0.0,1.0]
 var_name = "ICE_C"
 var = all_variables[var_name]
 
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_1_MAX
+file0 = ""
+file = "daily_maximum_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\1\\max\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_2_MAX
+file0 = ""
+file = "daily_maximum_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\2\\max\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_5_MAX
+file0 = ""
+file = "daily_maximum_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\5\\max\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_1_MIN
+file0 = ""
+file = "daily_minimum_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\1\\min\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_2_MIN
+file0 = ""
+file = "daily_minimum_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\2\\min\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_C_5_MIN
+file0 = ""
+file = "daily_minimum_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\5\\min\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+#SET ICE_C_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+#color_map = cmo.cm.ice
+var_lims=[-0.5,0.5]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+#SET ICE_C_2vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_C_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearICE_C\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+#color_map = cmo.cm.ice
+var_lims=[-0.5,0.5]
+var_name = "ICE_C"
+var = all_variables[var_name]
+
+####
+#### ICE VOLUMES
+####
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_1
+file0 = ""
+file = "daily_average_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\1\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_2
+file0 = ""
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\2\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_5
+file0 = ""
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\5\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_1_MAX
+file0 = ""
+file = "daily_maximum_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\1\\max\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_2_MAX
+file0 = ""
+file = "daily_maximum_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\2\\max\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_5_MAX
+file0 = ""
+file = "daily_maximum_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\5\\max\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_1_MIN
+file0 = ""
+file = "daily_minimum_{}001.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\1\\min\\"
+set_name = "{}001".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_2_MIN
+file0 = ""
+file = "daily_minimum_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\2\\min\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+### NON COMPARISONS, JUST DATA
+#SET ICE_V_5_MIN
+file0 = ""
+file = "daily_minimum_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\5\\min\\"
+set_name = "{}005".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+#SET ICE_V_5vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}005.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}5vs1\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\"
+set_name = "{}005".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+#color_map = cmo.cm.ice
+var_lims=[-0.5,0.5]
+var_name = "ICE_V"
+var = all_variables[var_name]
+
+#SET ICE_V_2vs1_diff
+file0 = "daily_average_{}001.nc".format(data_set)
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}2vs1\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\"
+set_name = "{}002".format(data_set)
+set_name0 = "{}001".format(data_set)
+color_map = cmo.cm.diff
+#color_map = cmo.cm.ice
+var_lims=[-0.5,0.5]
+var_name = "ICE_V"
+var = all_variables[var_name]
 
 
 
+
+######################################
 
 #SET SST_1
 file0 = ""
@@ -441,3 +692,15 @@ replace_title = "RCP 8.5"
 
 
 
+### NON COMPARISONS, JUST DATA
+#SET SST_2
+file0 = ""
+file = "daily_average_{}002.nc".format(data_set)
+output_dir_plus = "\\ICE_V_{}\\".format(data_set)
+output_dir_plus_means = "\\YearICE_V\\2\\"
+set_name = "{}002".format(data_set)
+set_name0 = ""
+color_map = cmo.cm.ice
+var_lims=[0.0,1.0]
+var_name = "ICE_V"
+var = all_variables[var_name]

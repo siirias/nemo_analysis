@@ -36,7 +36,8 @@ shown_units = {"SSS":"g/kg",
 var_name = {"SST":"SST_mean",
             "SBT":"SBT_mean",
             "SSS":"SSS_mean",
-            "SBS":"SBS_mean"}
+            "SBS":"SBS_mean",
+            "ICE_C":""}
 model_names = {'A':'model 1',
                'B':'model 2',
                'D':'model 3',
@@ -49,6 +50,16 @@ var_lims_list = {'SST':(None,None),
                  'dSSS':(-1.2,1.2),
                  'SBS':(None,None),
                  'dSBS':(-1.2,1.2),}
+
+var_lims_list = {'SST':(3.0,15.0),
+                 'dSST':(-5.0,5.0),
+                 'SBT':(3.0,15.0),
+                 'dSBT':(-5.0,5.0),
+                 'SSS':(0.0,8.0),
+                 'dSSS':(-1.2,1.2),
+                 'SBS':(0.0,8.0),
+                 'dSBS':(-1.2,1.2),}
+
 figure_size = (10,10)
 fig_dpi = 300
 mod_min_lat = 59.92485
@@ -67,20 +78,23 @@ lon,lat = np.meshgrid(lon,lat)
 
 the_proj = ccrs.PlateCarree()
 
+#clim_sets = ['c30v', 'c70v']
 clim_sets = ['c30v', 'c70v']
 var_list = ['SSS', 'SBS', 'SST', 'SBT']
-#var_list = ['SSS', 'SBS']
+#var_list = ['ICE_C']
+#var_list = ['SST', 'SBT']
 var_lims = [None, None]
 model_sets = ['ABD','A','B','D'] # 'A','B','D','ABD'
 #model_sets = ['ABD'] # 'A','B','D','ABD'
-data_sets = ['RCP45', 'RCP85'] #'reference', 'RCP45', 'RCP85'
+#data_sets = ['RCP45', 'RCP85'] #'reference', 'RCP45', 'RCP85'
+data_sets = ['reference','RCP45', 'RCP85'] #'reference', 'RCP45', 'RCP85'
 time_scale = 'd' # monthly or daily data
 mean_types = ['Year', 'DJF', 'MAM','JJA','SON'] #'Year', 'DJF', 'MAM','JJA','SON'
 mean_types= ['Year']
-compare_to_reference = True
+compare_to_reference = False
 plot_bathymetry = False
 plot_bathy_contours = True
-color_map = cmo.cm.thermal
+color_map = cmo.cm.haline
 close_windows = True
 def create_main_map(the_proj):
         details = '10m'
@@ -127,6 +141,10 @@ def get_dataset(model_set, data_set, variable, clim_set):
     else:
         models = [model_set]
     tmp_dat = 0
+    # if(clim_set == 'reference'):
+    #     clim_set = 'c30v' # doesn't really matter, 
+    #                       # now we just want the history data, either is fine.
+    #     data_set = 'reference'
     for m in models:
         data_dir = "{}\\{}\\".format(main_data_dir, clim_set)
         data_filename = "{}_climatology_{}_{}_{}.nc".format(\

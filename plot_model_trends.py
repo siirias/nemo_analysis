@@ -29,7 +29,7 @@ sm.root_data_in = "D:\\SmartSea\\new_dataset\\"
 sm.root_data_out = "C:\\Data\\"
 #sm.root_data_in = "D:\\Data\\svnfmi_merimallit\\smartsea\\"
 out_dir = sm.root_data_out+"figures\\SmartSeaNEW\\test\\"
-fig_factor = 0.8#1.5 #0.8  #1.5
+fig_factor = 1.0#1.5 #0.8  #1.5
 fig_size = (10*fig_factor,5*fig_factor)
 #analyze_salt_content = True
 #analyze_heat_content = True
@@ -45,7 +45,7 @@ analyze_sbs_changes = False
 analyze_correlations = False
 plot_single_models = True
 plot_combinations = not plot_single_models
-
+model_area = 1512005.625  #km^3
 
 plot_original = False
 plot_yearly_mean = True
@@ -54,6 +54,7 @@ plot_trends = False
 plot_cloud = False
 plot_scatter = True
 show_grid = True
+use_total_salt_amount = False # Total amount, or average salinity.
 
 plot_shift = dt.timedelta(5*365)  # how much decadal errorbars are shifted to middle of the decade
 extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (too much)
@@ -62,8 +63,8 @@ create_ensembles = True
 ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
-period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2100,1,1)}
-#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
+#period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2100,1,1)}
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
@@ -120,16 +121,25 @@ if(analyze_correlations):
 #    
 #    
     
-for a in content_types:        
+for a in content_types:
+    data_multiplier = 1.0 # gludge to change from total salt to salinity.        
     if content_types[a]:
         if(a == "analyze_salt_content"):
             variable = 'sea_water_absolute_salinity'
             name_format = 'reserve_salinity_(.*)_total\.nc'
-            title_text = "Total amount of salt in GoB (GT)"
+            if use_total_salt_amount:
+                title_text = "Total amount of salt in GoB (GT)"
+                trend_unit = "GT/decade"
+            else: #calculate average salinity
+                title_text = "Average salinity over model area (g/kg)"
+                trend_unit = "(g/kg)/decade"
+                data_multiplier = 1./model_area
+            
         elif(a == "analyze_heat_content"):
             variable = 'heat_content'
             name_format = 'reserve_potential_temperature_(.*)_total\.nc'            
             title_text = "Total heat energy (J)"
+            trend_unit = "J/decade"
     #    data_dir ='D:\\Data\\SmartSeaModeling\\'
         data_dir = sm.root_data_in+'derived_data\\figure_data\\'
         files = os.listdir(data_dir)
@@ -151,7 +161,7 @@ for a in content_types:
                 D = xr.open_dataset(data_dir+f)
 #                print(set_name)
     #            D = Dataset(data_dir+f)
-                values =  np.array(D[variable])
+                values =  np.array(D[variable])*data_multiplier
                 times =  np.array(D['time'])
                 dat[set_name] = pd.DataFrame(list(zip(times,values)),\
                                    columns=['time',variable])
@@ -187,8 +197,8 @@ for a in content_types:
                 smoothed = d[variable].ewm(span = smooth_window,min_periods=smooth_window).mean()
                 fitting_time = mp.dates.date2num(d.index)
                 fitting = np.polyfit(fitting_time,d[variable],1)
-                print("{} change: {:.3} GT/year".format(s,fitting[0]*365.15))
-                label_text = "{}:{:0.3} GT/year".format(s,fitting[0]*365.15)
+                print("{} change: {:.3} {}".format(s,fitting[0]*365.15, trend_unit))
+                label_text = "{}:{:0.3} {}".format(s,fitting[0]*365.15, trend_unit)
                 if(plot_smoothed):
                     plt.plot(d.index,smoothed,label=label_text, zorder=15,**sm.set_style(s))
                     label_text = None # to prevent plotting the label more than once

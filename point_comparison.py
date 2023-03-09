@@ -25,9 +25,9 @@ from smartseahelper import smh
 from collections import Counter # Needed for the histogram stuff
 import scipy.stats as sp
 
-out_dir = "D:\\Data\\Figures\\SmartSeaNew\\compare\\"
-compare_data_dir = "E:\\SmartSea\\all_shark_files\\"  
-data_dir = "E:\\SmartSea\\new_dataset\\"
+out_dir = "C:\\Data\\Figures\\SmartSeaNew\\compare\\"
+compare_data_dir = "D:\\SmartSea\\all_shark_files\\"  
+data_dir = "D:\\SmartSea\\new_dataset\\"
 
 recalculate = True
 
