@@ -193,6 +193,8 @@ class smh:
             model_type = "RCP45"
         if(set_name.upper() == "CONTROL"):
             model_type = "Control"
+        if(set_name.upper() == "REFERENCE"):
+            model_type = "Reference"
         if(set_name.upper() == "HINDCAST"):
             model_type = "hindcast"
     
@@ -208,7 +210,8 @@ class smh:
             'REANALYSIS':'k',
             'RCP45':'b',
             'RCP85':'#ff8c00',
-            'Control':'m'
+            'Control':'m',
+            'Reference':'m'
         }
         scen_styles = {
             'history':'--',

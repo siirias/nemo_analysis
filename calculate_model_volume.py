@@ -18,9 +18,11 @@ areas = ss.give_areas(lats, lons)
 depths=dat.variables['deptht'][:]
 d_bounds = np.array(dat['deptht_bounds'])
 volumes=np.repeat(areas[np.newaxis,:,:],len(depths),axis=0)
-for i in range(len(depths)): #Fix to use depth_bounds
+for i in range(len(depths)): 
     layer_depth = d_bounds[i,1] - d_bounds[i,0]
     volumes[i,:,:]*=layer_depth*0.001  #because km
+    
+
     
 x = np.array(dat.variables['votemper'][0,:,:,:]) #Just something with values
 volumes = np.ma.masked_array(volumes, np.isnan(x) + (x == 0.0))

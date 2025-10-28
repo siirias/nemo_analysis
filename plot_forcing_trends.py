@@ -19,26 +19,27 @@ sm = smartseahelper.smh()
 output_dir = "C:\\Data\\Figures\\SmartSeaNEW\\Forcings\\"
 main_data_dir = "C:\\Data\\svnfmi_merimallit\\smartsea\\derived_data\\"
 
-fig_factor = 0.9  #1.5
-#fig_size = (10*fig_factor,5*fig_factor)
-fig_size = (5*fig_factor,7*fig_factor)
+fig_factor = 1.2  #1.5, 0.9
+fig_size = (10*fig_factor,5*fig_factor)
+#fig_size = (5*fig_factor,7*fig_factor)
 fig_dpi = 300
 analyze_inflow = True
 analyze_atmosphere = False
-analyze_boundary = True
+analyze_boundary = False
 
-plot_single_models = False
+plot_single_models = True
 plot_combinations = not plot_single_models
 
-plot_trends = False
+plot_trends = True
 plot_smoothed = False
 plot_yearly_mean = True
 plot_original = False
 plot_cloud = False
 plot_scatter = True
 show_grid = True
-fix_inflow_ylims = (5.0,8.0) #False # (100,350)# False
-show_trends_in_Legend = False
+fix_inflow_ylims =  (130,270)# False
+fix_salinity_ylims = (5.0,8.0) #False # (100,350)# False
+show_trends_in_Legend = True
 
 b_val = 'vosaline' # 'avg_temp'
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
@@ -109,13 +110,13 @@ if analyze_inflow:
         smoothed = d[variable].ewm(span = smooth_window,min_periods=smooth_window).mean()
         fitting_time = mp.dates.date2num(d.index)
         fitting = np.polyfit(fitting_time,d[variable],1)
-        print("{} change: {:.3} {}".format(s,fitting[0]*365.15,r'$km^3yr^{-1}$'))
+        print("{} change: {:.3} {}".format(s,fitting[0]*3651.5,r'$km^3/decade$'))
         s_temp = s
         if(s == 'hindcast'):
             s_temp = 'Hindcast'
         if(show_trends_in_Legend):
-            label_text = "{}:{:0.3}".format(s_temp,fitting[0]*365.15)
-            label_text += r"$km^3yr^{-1}$"
+            label_text = "{}:{:0.3}".format(s_temp,fitting[0]*3651.5)
+            label_text += r"$km^3year^{-1}/decade$"
         else:
             label_text = "{}".format(s_temp)
 
@@ -271,10 +272,10 @@ if analyze_boundary:
 #           plt.plot(d.index,smoothed, zorder=15,label='_nolegend_',**sm.set_style(s))
             fitting_time = mp.dates.date2num(d.index)
             fitting = np.polyfit(fitting_time,d[b_val],1)
-            print("{} {} change: {:.3f} (g/kg)/year".format(s,subset,fitting[0]*365.15))
+            print("{} {} change: {:.3f} (g/kg)/decade".format(s,subset,fitting[0]*3651.5))
             if(show_trends_in_Legend):
-                label_text = "{}:{:0.3f}".format(s_temp,fitting[0]*365.15)
-                label_text += " $g$ $kg^{-1}/yr$"
+                label_text = "{}:{:0.3f}".format(s_temp,fitting[0]*3651.5)
+                label_text += " $(g$ $kg^{-1})/decade$"
             else:
                 label_text = "{}".format(s_temp)
             if(plot_smoothed):
@@ -316,7 +317,8 @@ if analyze_boundary:
                 plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
                 label_text = None # to prevent plotting the label more than once
             boundary_numbers.append([s,float(mean.mean()),fitting[0]*365.15,float(std.mean())])
-        plt.ylim([5.0,8.0])
+        if(fix_salinity_ylims):
+            plt.ylim((fix_salinity_ylims))
         if(show_grid):
             plt.grid('on')
         plt.legend(loc = 'lower left')

@@ -10,6 +10,8 @@ import matplotlib as mp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy import stats
+
 #import seaborn as sns
 import os
 import re
@@ -37,7 +39,7 @@ fig_size = (10*fig_factor,5*fig_factor)
 content_types = {"analyze_salt_content":True,\
                  "analyze_heat_content":True}
 
-analyze_profiles = False
+analyze_profiles = True
 profile_types = ["vosaline", "votemper"]
 #profile_types = ["vosaline"]
 analyze_salt_trends = False
@@ -47,15 +49,21 @@ plot_single_models = True
 plot_combinations = not plot_single_models
 model_area = 1512005.625  #km^3
 
-plot_original = False
-plot_yearly_mean = True
+plot_observations = True
+hide_scenarios = True # True only when wanting to compare just hindcast and observations
+plot_original = True
+plot_yearly_mean = False
 plot_smoothed = False
-plot_trends = False
+plot_trends = True
 plot_cloud = False
-plot_scatter = True
+plot_scatter = False
 show_grid = True
 use_total_salt_amount = False # Total amount, or average salinity.
 
+#original_alpha = 0.2
+original_alpha = 1.0
+if(not plot_yearly_mean):
+    original_alpha = 0.8
 plot_shift = dt.timedelta(5*365)  # how much decadal errorbars are shifted to middle of the decade
 extra_shift_step = dt.timedelta(0.2*365) # keep the errorbars from overlapping (too much)
 
@@ -64,20 +72,138 @@ ensemble_filters = {'RCP45':'002','RCP85':'005','HISTORY':'001'}
 
 drop_hindcast = False
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2100,1,1)}
-period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
+#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2100,1,1)}
 #period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2060,1,1)}
 #period={'min':dt.datetime(2006,1,1), 'max':dt.datetime(2060,1,1)}
-#period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
+period={'min':dt.datetime(1980,1,1), 'max':dt.datetime(2006,1,1)}
 
 if(period['min'] >= dt.datetime(2006,1,1)):
     drop_hindcast = True
 
+def read_observations(measuring_point, variable, depth, depth_window = 3.0):
+    sm = smartseahelper.smh()
+    sm.root_data_in = "C:/Data/SmartSeaModeling/"
+    sm.root_data_out = "C:/Data/SmartSeaModeling/"
+    in_dir = sm.root_data_in + "/observations/"
+    
+    obs_dtypes = {
+        'Cruise': str,
+        'Station': str,
+        'Type': str,
+        'yyyy-mm-ddThh:mm': str,
+        'Latitude [degrees_north]': float,
+        'Longitude [degrees_east]': float,
+        'Bot. Depth [m]': float,
+        'Secchi Depth [m]:METAVAR:FLOAT': float,
+        'PRES [db]': float,
+        'TEMP [deg C]': float,
+        'PSAL [psu]': float,
+        'DOXY [ml/l]': float,
+        'PHOS [umol/l]': float,
+        'TPHS [umol/l]': float,
+        'SLCA [umol/l]': float,
+        'NTRA [umol/l]': float,
+        'NTRI [umol/l]': float,
+        'AMON [umol/l]': float,
+        'NTOT [umol/l]': float,
+        'PHPH []': float,
+        'ALKY [meq/l]': float,
+        'CPHL [ug/l]': float
+    }
+    obs_nans = ['Nan']
+    
+    def handle_specials(d):
+        #get rid of non numeric strings in dataobs
+        if(d==''):
+            return np.nan
+        if(d[0]=='<'):
+            return 0.0
+        return float(d)
+    
+    convert_dict = {col: handle_specials 
+                    for col in obs_dtypes.keys() if obs_dtypes[col] == float}
+    
+    depth_variable = 'PRES [db]'
+    time_variable = 'yyyy-mm-ddThh:mm'
+    T_variable = 'TEMP [deg C]'
+    S_variable = 'PSAL [psu]'
+    
+    all_variables = [{'obs':T_variable, 'model':'votemper'},
+                     {'obs':S_variable, 'model':'vosaline'}]
+    var = list(filter(lambda x: x['model']==variable, all_variables))[0]    
+    file = measuring_point+'.csv'
+    data = pd.read_csv(in_dir+file, 
+                       parse_dates = [time_variable],
+                       na_values = obs_nans,
+                       converters = convert_dict,
+                       dtype = obs_dtypes)
+    indices = np.abs(data[depth_variable]-depth) <= depth_window
+    d_to_plot = data.loc[indices, var['obs']]
+    t_to_plot = data.loc[indices, time_variable]
+    return t_to_plot, d_to_plot
+
+def format_obs_comparison(obs_comparison):
+    result = []
+    grouped_data = {}
+#    value_format = lambda x,y:"{:0.2f}/{:0.2f}".format(x,y)  #min/max
+    value_format = lambda x,y:"${:0.2f} \pm {:0.2f}$".format(((x+y)*0.5),np.abs(0.5*(x-y)))  #avg +- spread
+    for line in obs_comparison:
+        parts = line.split(',')
+        point = parts[2]
+        depth = parts[3]
+        key = (point, depth)
+        if key not in grouped_data:
+            grouped_data[key] = []
+        grouped_data[key].append(line)
+    for the_key in grouped_data.keys():
+        data = grouped_data[the_key]
+        tmp = {'point':the_key[0], 'depth':the_key[1]}
+        for i in data:
+            parts = i.split(',')
+            parts[5] = float(parts[5])
+            parts[6] = float(parts[6])
+            if 'Salinity' in i and 'observation' in i:
+                tmp['sal_obs'] = value_format(parts[5],parts[6])
+            if 'Salinity' in i and 'hindcast' in i:
+                tmp['sal_hind'] = value_format(parts[5],parts[6])
+            if 'Temperature' in i and 'observation' in i:
+                tmp['tem_obs'] = value_format(parts[5],parts[6])
+            if 'Temperature' in i and 'hindcast' in i:
+                tmp['tem_hind'] = value_format(parts[5],parts[6])
+        print(data)
+        result.append(f"{tmp['point']} & {tmp['depth']} & {tmp['sal_obs']} & {tmp['sal_hind']} & {tmp['tem_obs']} & {tmp['tem_hind']} \\\\ ")
+    return result
+        
 def make_ensemble(data_sets, ensemble_string, param = 'value'):
     keys = [x for x in data_sets.keys() if ensemble_string in x]    
     ensemble_vals = np.mean([data_sets[x][param] for x in keys],0)
     ensemble = data_sets[keys[0]].copy()
     ensemble[param] = ensemble_vals
     return ensemble
+
+
+def calc_confidence_intervals(slope, intercept, x, y, alpha=0.1):
+    n = len(x)
+    df = n - 2
+
+    # Calculate standard error of slope and intercept
+    y_pred = slope * x + intercept
+    residuals = y - y_pred
+    SSE = np.sum(residuals**2)
+    Sxx = np.sum((x - np.mean(x))**2)
+    SE_slope = np.sqrt(SSE / (df * Sxx))
+    SE_intercept = SE_slope * np.sqrt(np.sum(x**2) / n)
+
+    # Calculate t-value for given alpha and degrees of freedom
+    t_val = stats.t.ppf(1 - alpha/2, df)
+#    t_val = stats.norm.ppf(1 - alpha/2)
+
+    # Calculate confidence intervals
+    slope_ci = (slope - t_val * SE_slope, slope + t_val * SE_slope)
+    intercept_ci = (intercept - t_val * SE_intercept, intercept + t_val * SE_intercept)
+
+    return slope_ci, intercept_ci
+
 
 
 class ValueSet():
@@ -188,7 +314,7 @@ for a in content_types:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
             if(plot_original):
-                plt.plot(d.index,d[variable], label='_nolegend_', zorder=11,**sm.set_style(s,0.2))
+                plt.plot(d.index,d[variable], label='_nolegend_', zorder=11,**sm.set_style(s,original_alpha))
         for s in dat:
             d=dat[s]
             d = d[(d.index>period['min']) & (d.index<period['max'])]
@@ -289,6 +415,7 @@ gathered_profile_trends = ValueSet()
 if analyze_profiles:
 #    variable = 'votemper'
 #    variable = 'vosaline'
+    obs_hind_comparison = []
     yearly_means = {}
     full_point_data = {}
     for variable in profile_types:
@@ -328,6 +455,9 @@ if analyze_profiles:
                             set_name = "hindcast"
                             if(drop_hindcast):
                                 skip_this = True
+                    if(hide_scenarios and '00' in set_name):
+                        skip_this = True #This when all scenarios are hidden
+                     
                     if(not skip_this):
 #                        print(set_name)
                         if(not set_name in yearly_means[point].keys()):
@@ -360,7 +490,7 @@ if analyze_profiles:
                 full_point_data[variable][point][depth_in_list] = dat.copy()
                 #calculate the means for History, RCP4.5 and RCP8.5
                 if(plot_combinations):
-                    dat["Control"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
+                    dat["Reference"] = pd.concat([dat['A001'],dat['B001'],dat['D001']])
                     dat["RCP45"] = pd.concat([dat['A002'],dat['B002'],dat['D002']])
                     dat["RCP85"] = pd.concat([dat['A005'],dat['B005'],dat['D005']])
                     if(not plot_single_models): # remove the A,B,D thingies from the list
@@ -384,9 +514,19 @@ if analyze_profiles:
                         fitting = np.polyfit(fitting_time,d[variable],1)
                         print("{} change: {:.3} unit/year".format(s,fitting[0]*365.15))
                         label_text = "{}:{:0.3f} u/dec".format(s,fitting[0]*3651.5)
+                        if s == 'hindcast':
+                            trend=fitting[0]*3651.5
+                            slope_ci, intercept_ci = calc_confidence_intervals(
+                                                        fitting[0],
+                                                        fitting[1],
+                                                        fitting_time,
+                                                        d[variable])
+                            slope_ci = tuple(map(lambda x: x*3651.5,slope_ci)) #To get decadal values
+                            
+                            obs_hind_comparison.append(f"{variable_name},{s},{point},{depth:.1f},{trend:.3f},{np.min(slope_ci):.3},{np.max(slope_ci):.3}")
                         if(plot_original):
                             plt.plot(d.index,d[variable], label='_nolegend_',\
-                                             zorder=11,**sm.set_style(s,0.2))
+                                             zorder=11,**sm.set_style(s,original_alpha))
                         if(plot_smoothed):
                             plt.plot(d.index,smoothed,label=label_text, \
                                          zorder=15,**sm.set_style(s))
@@ -461,7 +601,49 @@ if analyze_profiles:
                             mean_style['alpha'] = 0.15
                             plt.plot(d_tmp.index,d_tmp[variable], label=label_text,zorder=16,**mean_style)
                             label_text = None # to prevent plotting the label more than once
-                        
+                if(plot_observations):
+                    if depth_in <80.0:
+                        border_num = 2.5
+                    else:
+                        border_num = 10.0  #m for deeper the asamples are with larger steps
+                    obs_t, obs_d = read_observations(point, variable, depth_in, border_num)
+                    time_filter = [x[0] and x[1] for x in zip(obs_t>period['min'],obs_t<period['max'])]
+                    obs_t = obs_t[time_filter]
+                    obs_d = obs_d[time_filter]
+                    
+                    # create dataframe, to easily resample the data to 1 day data.
+                    obs_df = pd.DataFrame({'time': obs_t, 'data': obs_d})
+                    obs_df.set_index('time', inplace=True)
+                    obs_df = obs_df.resample('D').mean()
+                    obs_df.dropna(inplace=True)
+                    
+                    obs_fitting_time = mp.dates.date2num(obs_df.index)
+                    obs_fitting = np.polyfit(obs_fitting_time, obs_df['data'], 1)                    
+                    
+                    # ok_ind = pd.notnull(obs_d)
+                    # obs_t = obs_t[ok_ind]
+                    # obs_d = obs_d[ok_ind]
+                    # obs_fitting_time = mp.dates.date2num(obs_t)
+                    # obs_fitting = np.polyfit(obs_fitting_time,obs_d,1)
+                    trend = obs_fitting[0]*3651.5
+                    
+                    slope_ci, intercept_ci = calc_confidence_intervals(
+                                                obs_fitting[0],
+                                                obs_fitting[1],
+                                                obs_fitting_time,
+                                                obs_df['data'])
+                    slope_ci = tuple(map(lambda x: x*3651.5,slope_ci)) #To get decadal values
+                    obs_hind_comparison.append(f"{variable_name},observation,{point},{depth:.1f},{trend:.3f},{np.min(slope_ci):.3},{np.max(slope_ci):.3}")
+                    
+                    label_text = "{}:{:0.3f} u/dec".format('observations',obs_fitting[0]*3651.5)
+                    
+                    plt.plot(obs_t, obs_d, 'k.', label=label_text, markersize = 2.0)
+                    # if(plot_trends):
+                    #     plt.plot(obs_fitting_time,obs_fitting[0]*obs_fitting_time+obs_fitting[1],'k--',label=None,alpha=0.3)
+                    #plt.plot(obs_fitting_time, obs_df['data'], 'k.', label=label_text, markersize = 2.0)
+                    if(plot_trends):
+                        plt.plot(obs_fitting_time, obs_fitting_time*obs_fitting[0]+obs_fitting[1],'k--',label=None,alpha=0.3)
+                    
                         
                 plt.legend()
                 if(fixed_axis):
@@ -514,6 +696,12 @@ if analyze_profiles:
                                       mean_val, min_val, max_val))
         print(pd.read_csv(trend_file_name,'\t')\
               .to_latex(caption = variable_name, index = False))
+            
+if(plot_observations):
+    tmp = format_obs_comparison(obs_hind_comparison)
+    for i in tmp:
+        print(i)
+            
 
 #
 #
