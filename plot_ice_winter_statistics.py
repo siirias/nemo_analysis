@@ -4,6 +4,7 @@ import re
 import glob
 from matplotlib.animation import FuncAnimation, FFMpegWriter, PillowWriter
 
+
 import os
 from typing import Optional, Dict, Any
 
@@ -11,14 +12,16 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-
+import cmocean as cmo
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.colors import Colormap
 
 
-# ---------------- helpers for lon/lat healing ----------------
+    
+# ---------------- helpers ----------------
 
 def _fill_1d_nearest(a: np.ndarray) -> np.ndarray:
     """Fill NaNs in a 1D array by nearest-value (edge-hold) via index interpolation."""
@@ -51,6 +54,30 @@ def _centers_to_edges(c: np.ndarray) -> np.ndarray:
             edges[k] = edges[k - 1] + eps
     return edges
 
+
+def _var_label(meta: Dict[str, Any]) -> str:
+    """Human-readable label from var name + units."""
+    units = f" ({meta.get('units','')})" if meta.get('units') else ""
+    return meta["var_name"].replace("_", " ").title() + units
+
+def _resolve_cmap(cmap: Optional[Colormap or str] = None,
+                  nan_color: str = "#6a3e25") -> Colormap:
+    """
+    Accepts a Matplotlib Colormap object or a string name (e.g. 'viridis', 'plasma', 'cividis', 'magma_r').
+    Returns a copy with NaN color set to `nan_color`.
+    """
+    import matplotlib.pyplot as plt
+    if cmap is None:
+        cm = plt.get_cmap("viridis").copy()
+    elif isinstance(cmap, str):
+        cm = plt.get_cmap(cmap).copy()
+    else:
+        cm = cmap.copy() if hasattr(cmap, "copy") else cmap
+    try:
+        cm.set_bad(nan_color)
+    except Exception:
+        pass
+    return cm
 
 # ---------------- data preparation ----------------
 
@@ -138,22 +165,26 @@ def prepare_ice_field(nc_file: str,
 
 # ---------------- plotting ----------------
 
-def plot_ice_map(prep: Dict[str, Any],
-                 output_path: Optional[str] = None,
-                 projection: str = "albers",   # "albers" | "lambert" | "merc"
-                 coastlines: bool = False,
-                 vmin: float = 0.0, vmax: float = 200.0,
-                 title: Optional[str] = None,
-                 figsize=(8, 9), dpi: int = 300,
-                 show: bool = True):
+# ============== shared plotting factory ==============
+def create_ice_plot(prep: Dict[str, Any],
+                    projection: str = "albers",
+                    coastlines: bool = False,
+                    vmin: float = 0.0, vmax: float = 200.0,
+                    figsize=(5, 5),
+                    cbar_borderpad: float = -1.0,
+                    cbar_label: Optional[str] = None,
+                    cmap: Optional[Colormap or str] = None): 
     """
-    Plot prepared ice map with Cartopy. Saves to output_path if given.
+    Build the Cartopy figure/axes + pcolormesh + inset colorbar.
+    Returns (fig, ax, pc, set_title) where set_title(text) updates the title.
     """
-    Z = prep["Z"]
-    lon_e = prep["lon_e"]
-    lat_e = prep["lat_e"]
+
+
+    Z      = prep["Z"]
+    lon_e  = prep["lon_e"]
+    lat_e  = prep["lat_e"]
     extent = prep["extent"]
-    meta = prep["meta"]
+    meta   = prep["meta"]
 
     # Projection
     if projection == "albers":
@@ -174,64 +205,89 @@ def plot_ice_map(prep: Dict[str, Any],
     proj_data = ccrs.PlateCarree()
 
     # Colormap
-    cmap = plt.cm.viridis.copy()
-    cmap.set_bad("#6a3e25")  # land/background as brown
-
-    fig, ax = plt.subplots(
-        figsize=figsize,
-        subplot_kw={"projection": proj_map},
-        constrained_layout=True,
-    )
+    cm = _resolve_cmap(cmap)
+    fig, ax = plt.subplots(figsize=figsize,
+                           subplot_kw={"projection": proj_map},
+                           constrained_layout=True)
     ax.set_facecolor("#6a3e25")
     ax.set_anchor("W")
-
-    pc = ax.pcolormesh(
-        lon_e, lat_e, Z,
-        transform=proj_data, shading="flat",
-        cmap=cmap, vmin=vmin, vmax=vmax
-    )
+    ax.set_extent(list(extent), crs=proj_data)
 
     if coastlines:
         ax.add_feature(cfeature.COASTLINE.with_scale("10m"), linewidth=0.6)
 
-    ax.set_extent(list(extent), crs=proj_data)
+    # Gridlines
+    gl = ax.gridlines(crs=proj_data, draw_labels=True,
+                      linewidth=0.5, alpha=0.4, linestyle=":",
+                      x_inline=False, y_inline=False)
+    gl.right_labels  = False
+    gl.top_labels    = False
+    gl.left_labels   = True
+    gl.bottom_labels = True
+    gl.rotate_labels = False
+    gl.xformatter    = LONGITUDE_FORMATTER
+    gl.yformatter    = LATITUDE_FORMATTER
+    gl.xlocator      = mticker.MultipleLocator(1)
 
-    # Gridlines: bottom longitudes, left latitudes; 1° steps; no inline labels
-    gl = ax.gridlines(
-        crs=proj_data, draw_labels=True,
-        linewidth=0.5, alpha=0.4, linestyle=":",
-        x_inline=False, y_inline=False
+    lat_min, lat_max = float(lat_e.min()), float(lat_e.max())
+    gl.ylocator      = mticker.FixedLocator(
+        np.arange(np.floor(lat_min), np.ceil(lat_max) + 1, 1)
     )
-    gl.right_labels   = False
-    gl.top_labels     = False
-    gl.left_labels    = True
-    gl.bottom_labels  = True
-    gl.rotate_labels  = False
-    gl.xformatter     = LONGITUDE_FORMATTER
-    gl.yformatter     = LATITUDE_FORMATTER
-    gl.xlocator       = mticker.MultipleLocator(1)
-    lat_min, lat_max  = float(lat_e.min()), float(lat_e.max())
-    gl.ylocator       = mticker.FixedLocator(np.arange(np.floor(lat_min),
-                                                       np.ceil(lat_max) + 1, 1))
-    gl.xlabel_style   = {"size": 9}
-    gl.ylabel_style   = {"size": 9}
-    gl.xpadding       = 3
-    gl.ypadding       = 3
+    gl.xlabel_style  = {"size": 9}
+    gl.ylabel_style  = {"size": 9}
+    gl.xpadding      = 3
+    gl.ypadding      = 3
 
-    # Title
+    # pcolormesh (edges) + colorbar inset
+    pc = ax.pcolormesh(lon_e, lat_e, Z,
+                       transform=proj_data, shading="flat",
+                       cmap=cm, vmin=vmin, vmax=vmax)
+
+    cax = inset_axes(ax, width="3%", height="85%",
+                     loc="center right", borderpad=cbar_borderpad)
+    cb  = fig.colorbar(pc, cax=cax, orientation="vertical")
+    cb.set_label(cbar_label or _var_label(meta))
+    # Title setter
+    def set_title(text: str):
+        ax.set_title(text, pad=12)
+
+    return fig, ax, pc, set_title
+
+
+# ============== still image wrapper (uses shared factory) ==============
+def plot_ice_map(prep: Dict[str, Any],
+                 output_path: Optional[str] = None,
+                 projection: str = "albers",
+                 coastlines: bool = False,
+                 vmin: float = 0.0, vmax: float = 200.0,
+                 title: Optional[str] = None,
+                 figsize=(5, 5),
+                 cbar_borderpad: float = -1.0,
+                 cmap: Optional[Colormap or str] = None,
+                 dpi: Optional[int] = 300,
+                 show: bool = True):
+    """
+    Plot prepared ice map. Saves to output_path if given.
+    """
+    meta = prep["meta"]
     if title is None:
-        label_units = f" ({meta['units']})" if meta["units"] else ""
-        title = meta["var_name"].replace("_", " ").title() + label_units
-    ax.set_title(title, pad=12)
+        units = f" ({meta['units']})" if meta["units"] else ""
+        title = meta["var_name"].replace("_", " ").title() + units
 
-    # Inset colorbar (doesn't consume outer margins)
-    cax = inset_axes(ax, width="3%", height="85%", loc="center right", borderpad=-2.0)
-    cb = fig.colorbar(pc, cax=cax, orientation="vertical")
-    cb.set_label(title)
+    fig, ax, pc, set_title = create_ice_plot(
+        prep,
+        projection=projection,
+        coastlines=coastlines,
+        vmin=vmin, vmax=vmax,
+        figsize=figsize,
+        cbar_borderpad=cbar_borderpad,
+        cmap = cmap
+    )
+    set_title(title)
 
     if output_path:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        plt.savefig(output_path, bbox_inches="tight", dpi=dpi)
+        plt.savefig(output_path, bbox_inches="tight", dpi=dpi or 300)
 
     if show:
         plt.show()
@@ -240,28 +296,28 @@ def plot_ice_map(prep: Dict[str, Any],
 
     return fig, ax
 
+
+# ============== animation helpers ==============
 def _parse_set_years_from_name(fname: str):
-    """
-    Return (y1, y2, set_code) parsed from a filename like:
-    ice_season_2007-2008_set_A002.nc
-    """
-    m = re.search(r"ice_season_(\d{4})-(\d{4})_set_([A-Z]\d{3})\.nc$", os.path.basename(fname))
+    """Return (y1, y2, set_code) for names like ice_season_2007-2008_set_A002.nc"""
+    m = re.search(
+        r"ice_season_(\d{4})-(\d{4})_set_([A-Z]\d{3})\.nc$",
+        os.path.basename(fname)
+    )
     if not m:
         return None
-    y1, y2, code = int(m.group(1)), int(m.group(2)), m.group(3)
-    return y1, y2, code
+    return int(m.group(1)), int(m.group(2)), m.group(3)
 
 
 def list_set_files(input_dir: str, set_code: str):
-    """
-    Find and sort all files of a given set (e.g., 'A002') by start year.
-    """
+    """Find and sort all files for a given set code by start year."""
     pattern = os.path.join(input_dir, f"ice_season_*_set_{set_code}.nc")
     files = [f for f in glob.glob(pattern) if _parse_set_years_from_name(f)]
-    files.sort(key=lambda f: _parse_set_years_from_name(f)[0])  # sort by y1
+    files.sort(key=lambda f: _parse_set_years_from_name(f)[0])
     return files
 
 
+# ============== animation wrapper (uses shared factory) ==============
 def make_ice_animation(input_dir: str,
                        bathy_file: str,
                        set_code: str = "A002",
@@ -270,108 +326,61 @@ def make_ice_animation(input_dir: str,
                        coastlines: bool = False,
                        vmin: float = 0.0, vmax: float = 200.0,
                        figsize=(5, 5),
+                       cbar_borderpad: float = -1.0,
                        fps: int = 4,
                        out_dir: Optional[str] = None,
                        out_basename: Optional[str] = None,
-                       writer: Optional[str] = None):
+                       writer: Optional[str] = None,
+                       cmap: Optional[Colormap or str] = None):
     """
     Build an animation over all 'ice_season_YYYY-YYYY_set_<set_code>.nc' files.
-    Saves MP4 if ffmpeg writer is available, else GIF.
+    Saves MP4 if ffmpeg available, else GIF.
     """
     files = list_set_files(input_dir, set_code)
     if not files:
         raise FileNotFoundError(f"No files found for set {set_code} in {input_dir}")
 
-    # Prepare first frame (defines grid/projection/extent)
+    # Prepare first for geometry/projection
     prep0 = prepare_ice_field(files[0], bathy_file, var_name=var_name)
 
-    # Choose projection & create persistent figure/axes
-    meta = prep0["meta"]
-    if projection == "albers":
-        proj_map = ccrs.AlbersEqualArea(
-            central_longitude=meta["central_lon"],
-            central_latitude=meta["central_lat"],
-            standard_parallels=(60, 66),
-        )
-    elif projection == "lambert":
-        proj_map = ccrs.LambertConformal(
-            central_longitude=meta["central_lon"],
-            central_latitude=meta["central_lat"],
-        )
-    elif projection == "merc":
-        proj_map = ccrs.Mercator()
-    else:
-        raise ValueError("projection must be one of: 'albers', 'lambert', 'merc'")
-    proj_data = ccrs.PlateCarree()
+    # Create shared figure/axes/pc via the SAME factory
+    fig, ax, pc, set_title = create_ice_plot(
+        prep0,
+        projection=projection,
+        coastlines=coastlines,
+        vmin=vmin, vmax=vmax,
+        figsize=figsize,
+        cbar_borderpad=cbar_borderpad,
+        cmap = cmap
+    )
 
-    cmap = plt.cm.viridis.copy()
-    cmap.set_bad("#6a3e25")
-
-    fig, ax = plt.subplots(figsize=figsize, subplot_kw={"projection": proj_map}, constrained_layout=True)
-    ax.set_facecolor("#6a3e25")
-    ax.set_anchor("W")
-    ax.set_extent(list(prep0["extent"]), crs=proj_data)
-
-    if coastlines:
-        ax.add_feature(cfeature.COASTLINE.with_scale("10m"), linewidth=0.6)
-
-    # Gridlines (same as your static map)
-    gl = ax.gridlines(crs=proj_data, draw_labels=True, linewidth=0.5, alpha=0.4, linestyle=":",
-                      x_inline=False, y_inline=False)
-    gl.right_labels = False
-    gl.top_labels = False
-    gl.left_labels = True
-    gl.bottom_labels = True
-    gl.rotate_labels = False
-    gl.xformatter = LONGITUDE_FORMATTER
-    gl.yformatter = LATITUDE_FORMATTER
-    gl.xlocator = mticker.MultipleLocator(1)
-    lat_min, lat_max = float(prep0["lat_e"].min()), float(prep0["lat_e"].max())
-    gl.ylocator = mticker.FixedLocator(np.arange(np.floor(lat_min), np.ceil(lat_max) + 1, 1))
-    gl.xlabel_style = {"size": 9}
-    gl.ylabel_style = {"size": 9}
-    gl.xpadding = 3
-    gl.ypadding = 3
-
-    # Persistent pcolormesh; we’ll only update its color array
-    pc = ax.pcolormesh(prep0["lon_e"], prep0["lat_e"], prep0["Z"],
-                       transform=proj_data, shading="flat",
-                       cmap=cmap, vmin=vmin, vmax=vmax)
-
-    # Inset colorbar
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    cax = inset_axes(ax, width="3%", height="85%", loc="center right", borderpad=-1.0)
-    cb = fig.colorbar(pc, cax=cax, orientation="vertical")
     title_base = f"{var_name.replace('_',' ')} — set {set_code}"
-    cb.set_label("Ice season length (days)")
-    ax.set_title(f"{title_base}", pad=12)
+    set_title(title_base)
 
-    # Preload Z fields and labels (faster & stable)
-    Z_list = []
-    labels = []
+    # Preload fields + labels
+    Z_list, labels = [], []
     for f in files:
         prep = prepare_ice_field(f, bathy_file, var_name=var_name)
-        # sanity: grid shape must match initial
         if prep["Z"].shape != prep0["Z"].shape:
             raise ValueError(f"Grid shape differs in {f}: {prep['Z'].shape} vs {prep0['Z'].shape}")
         Z_list.append(prep["Z"])
-        y1, y2, _code = _parse_set_years_from_name(f)
+        y1, y2, _ = _parse_set_years_from_name(f)
         labels.append(f"{y1}–{y2}")
 
-    # Update function: set new color array and title
+    # Update callback
     def update(i):
         Zi = Z_list[i]
-        # QuadMesh expects 1D array; mask NaNs:
         pc.set_array(np.ma.masked_invalid(Zi).ravel())
-        ax.set_title(f"{title_base} — {labels[i]}", pad=12)
+        set_title(f"{title_base} — {labels[i]}")
         return (pc,)
 
-    anim = FuncAnimation(fig, update, frames=len(Z_list), interval=1000//fps, blit=False, repeat=True)
+    anim = FuncAnimation(fig, update, frames=len(Z_list), interval=1000 // fps,
+                         blit=False, repeat=True)
 
-    # Choose writer
+    # Pick writer
     if writer is None:
         try:
-            _ = FFMpegWriter(fps=fps)  # probe
+            _ = FFMpegWriter(fps=fps)
             writer = "ffmpeg"
         except Exception:
             writer = "pillow"
@@ -396,31 +405,11 @@ def make_ice_animation(input_dir: str,
 
 # ---------------- main ----------------
 
-# def main():
-#     # --- user-editables (paths & options) ---
-#     bathy_file = r"c:/Data/NemoTest/bathy_meter.nc"
-#     input_dir  = r"C:\Data\VanhataloEtAl\ice_seasons_2006to2100/"
-#     nc_file    = os.path.join(input_dir, "ice_season_2007-2008_set_B002.nc")
-#     var_name   = "ice_season_length"
-#     out_dir    = r"C:\Data\VanhataloEtAl\plots/"
-#     out_name   = f"{os.path.splitext(os.path.basename(nc_file))[0]}_{var_name}.png"
-#     out_path   = os.path.join(out_dir, out_name)
-
-#     prep = prepare_ice_field(nc_file, bathy_file, var_name=var_name)
-#     plot_ice_map(
-#         prep,
-#         output_path=out_path,
-#         projection="albers",     # 'albers'|'lambert'|'merc'
-#         coastlines=False,
-#         vmin=0.0, vmax=200.0,
-#         title="Ice season length",
-#         figsize=(5,5), dpi=300,
-#         show=True
-#     )
 
 def main():
     bathy_file = r"c:/Data/NemoTest/bathy_meter.nc"
     input_dir  = r"C:\Data\VanhataloEtAl\ice_seasons_2006to2100/"
+#    var_name   = "first_continuous_ice_day"
     var_name   = "ice_season_length"
 
     # one-off static example (kept, if you want)
@@ -428,22 +417,23 @@ def main():
     # prep = prepare_ice_field(nc_file, bathy_file, var_name=var_name)
     # plot_ice_map(prep, output_path=None, projection="albers", coastlines=False,
     #              vmin=0.0, vmax=200.0, title="Ice season length", figsize=(5,5), show=True)
-
-    # animation for a chosen set:
-    make_ice_animation(
-        input_dir=input_dir,
-        bathy_file=bathy_file,
-        set_code="B005",            # ← change to A005, B002, etc.
-        var_name=var_name,
-        projection="albers",
-        coastlines=False,
-        vmin=0.0, vmax=200.0,
-        figsize=(5, 5),
-        fps=4,                      # 4 frames per second
-        out_dir=os.path.join(input_dir, "animations"),
-        out_basename=None,          # auto name
-        writer=None                 # auto choose ffmpeg→mp4, else Pillow→gif
-    )
+    for plot_set in ['A002','A005', 'B002', 'B005', 'D002', 'D005']:
+        # animation for a chosen set:
+        make_ice_animation(
+            input_dir=input_dir,
+            bathy_file=bathy_file,
+            set_code= plot_set, 
+            var_name=var_name,
+            projection="albers",
+            coastlines=False,
+            cmap = cmo.cm.curl,
+            vmin=0.0, vmax=250.0,
+            figsize=(5, 5),
+            fps=4,                      # 4 frames per second
+            out_dir=os.path.join(input_dir, "animations"),
+            out_basename=None,          # auto name
+            writer=None                 # auto choose ffmpeg→mp4, else Pillow→gif
+        )
 
 
 
